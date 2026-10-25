@@ -145,6 +145,7 @@ label.f input:not([type=range]),label.f select{font:inherit;padding:8px 10px;bor
     <button data-nav="loan">🏦 借貸</button>
     <button data-nav="hours">🕔 營業時間</button>
     <button data-nav="help">❓ 說明</button>
+    <button data-nav="transfer">📦 轉移存檔</button>
     <button data-nav="sound">🎵 音樂音效</button>
     <button data-nav="settings">⚙️ 設定</button>
   </nav>
@@ -164,6 +165,7 @@ label.f input:not([type=range]),label.f select{font:inherit;padding:8px 10px;bor
 
 <script>
 'use strict';
+const APP_VER='2026-10-25c';
 // ================= 工具 =================
 const $=s=>document.querySelector(s);
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -1398,7 +1400,7 @@ function viewTitle(){
   <p style="margin:0;font-size:17px">你是老闆。你不會直接指揮員工，而是決定要請誰、賣什麼、價錢多少、桌子怎麼擺，然後拉開暖簾開店，看看哪裡卡住了再調整。目標是拿到「提燈評鑑」三盞燈。</p>
   <p style="margin:0" class="muted">營業時間預設 17:00 到 24:00。串燒、生魚片、炸物、生啤酒、清酒……客人會一輪一輪追加，飲料賣得好才賺得到錢。</p>
   ${s?`<div class="notice"><b>存檔：</b>「${esc(s.name)}」第 ${s.day} 天・${'🏮'.repeat(s.lantern)||'未獲燈'}・資金 ${fmt(s.cash)}</div>`:''}`,
-  `${s?'<button class="btn primary" data-act="continue">繼續營業</button>':''}<button class="btn ${s?'':'primary'}" data-act="toNew">開新店</button><button class="btn" data-act="toTransfer">📥 匯入舊存檔</button><button class="btn" data-act="help">遊戲說明</button>`,false)}
+  `${s?'<button class="btn primary" data-act="continue">繼續營業</button>':''}<button class="btn ${s?'':'primary'}" data-act="toNew">開新店</button><span class="muted" style="margin-right:auto;align-self:center">版本 ${APP_VER}</span><button class="btn" data-act="toTransfer">📥 匯入舊存檔</button><button class="btn" data-act="help">遊戲說明</button>`,false)}
 let newOpt={name:'合',owner:'',loc:'songshan'};
 function viewNew(){
   sheet('開新店',`<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">
@@ -1638,6 +1640,7 @@ document.addEventListener('click',e=>{
   const d=t.dataset;
   if(d.nav){const n=d.nav;if(rt&&['edit','shop','promo','loan','staff'].includes(n))return;
     if(n==='edit'){ui.edit=!ui.edit;ui.placing=null;ui.sel=null;ui.tab='edit';renderAll();return}
+    if(n==='transfer'){ACT.toTransfer();return}
     ui.pausedBefore=ui.paused;if(n==='staff')ui.arg='list';openView(n,n==='staff'?'list':undefined);return}
   if(d.tab){ui.tab=d.tab;renderSide();return}
   if(d.music){AUD.music=d.music;saveAud();ac();if(AUD.music==='none')stopMusic();else startMusic();renderView();return}
