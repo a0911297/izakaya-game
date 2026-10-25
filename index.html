@@ -165,10 +165,10 @@ label.f input:not([type=range]),label.f select{font:inherit;padding:8px 10px;bor
 
 <script>
 'use strict';
-const APP_VER='2026-10-26b';
+const APP_VER='2026-10-26c';
 // 店主模式：網頁版（github.io）上只有輸入密碼的電腦看得到設定類選單；claude.ai 版一律視為店主
 const ONLINE=/github\.io$/.test(location.hostname);
-const OWNER_HASH='64d57a1de029807a5ddc3c0a89f51f2d5a91d92825d6ed698558890dd684687e';
+const OWNER_HASH='ed77e1a0f2358e25e8d7d31e7e7e33639d0a0468a3f62875b695d5e6438763a1';
 function isOwner(){if(!ONLINE)return true;try{return localStorage.getItem('izakaya-owner')===OWNER_HASH}catch(e){return false}}
 async function sha256(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
 // ================= 工具 =================
