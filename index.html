@@ -145,9 +145,9 @@ label.f input:not([type=range]),label.f select{font:inherit;padding:8px 10px;bor
     <button data-nav="loan">🏦 借貸</button>
     <button data-nav="hours">🕔 營業時間</button>
     <button data-nav="help">❓ 說明</button>
-    <button data-nav="transfer">📦 轉移存檔</button>
-    <button data-nav="sound">🎵 音樂音效</button>
-    <button data-nav="settings">⚙️ 設定</button>
+    <button data-nav="transfer" data-owner hidden>📦 轉移存檔</button>
+    <button data-nav="sound" data-owner hidden>🎵 音樂音效</button>
+    <button data-nav="settings" data-owner hidden>⚙️ 設定</button>
   </nav>
   <div id="main">
     <section id="stageWrap">
@@ -165,7 +165,12 @@ label.f input:not([type=range]),label.f select{font:inherit;padding:8px 10px;bor
 
 <script>
 'use strict';
-const APP_VER='2026-10-26a';
+const APP_VER='2026-10-26b';
+// 店主模式：網頁版（github.io）上只有輸入密碼的電腦看得到設定類選單；claude.ai 版一律視為店主
+const ONLINE=/github\.io$/.test(location.hostname);
+const OWNER_HASH='64d57a1de029807a5ddc3c0a89f51f2d5a91d92825d6ed698558890dd684687e';
+function isOwner(){if(!ONLINE)return true;try{return localStorage.getItem('izakaya-owner')===OWNER_HASH}catch(e){return false}}
+async function sha256(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
 // ================= 工具 =================
 const $=s=>document.querySelector(s);
 const rnd=(a,b)=>a+Math.random()*(b-a);
@@ -1381,6 +1386,7 @@ function drawEditOverlay(){
 // ================= 介面：頂部、側欄 =================
 function cash(){}
 function renderTop(){
+  document.querySelectorAll('#nav [data-owner]').forEach(b=>b.hidden=!isOwner());
   $('#shopName').textContent=g.name;$('#locName').textContent=LOCS[g.loc].label;
   const sat=rt&&rt.sat.length?Math.round(rt.sat.reduce((a,b)=>a+b,0)/rt.sat.length):null;
   const lan='🏮'.repeat(g.lantern)+'◌'.repeat(3-g.lantern);
@@ -1483,6 +1489,7 @@ function renderView(){
   if(v==='settings')return viewSettings();
   if(v==='sound')return viewSound();
   if(v==='transfer')return viewTransfer();
+  if(v==='owner')return viewOwner();
   if(v==='party')return viewParty();
   if(v==='over')return viewOver();
   if(v==='ending')return viewEnding();
@@ -1494,7 +1501,7 @@ function viewTitle(){
   <p style="margin:0;font-size:17px">你是老闆。你不會直接指揮員工，而是決定要請誰、賣什麼、價錢多少、桌子怎麼擺，然後拉開暖簾開店，看看哪裡卡住了再調整。目標是拿到「提燈評鑑」三盞燈。</p>
   <p style="margin:0" class="muted">營業時間預設 17:00 到 24:00。串燒、生魚片、炸物、生啤酒、清酒……客人會一輪一輪追加，飲料賣得好才賺得到錢。</p>
   ${s?`<div class="notice"><b>存檔：</b>「${esc(s.name)}」第 ${s.day} 天・${'🏮'.repeat(s.lantern)||'未獲燈'}・資金 ${fmt(s.cash)}</div>`:''}`,
-  `${s?'<button class="btn primary" data-act="continue">繼續營業</button>':''}<button class="btn ${s?'':'primary'}" data-act="toNew">開新店</button><span class="muted" style="margin-right:auto;align-self:center">版本 ${APP_VER}</span><button class="btn" data-act="toTransfer">📥 匯入舊存檔</button><button class="btn" data-act="help">遊戲說明</button>`,false)}
+  `${s?'<button class="btn primary" data-act="continue">繼續營業</button>':''}<button class="btn ${s?'':'primary'}" data-act="toNew">開新店</button><span class="muted" style="margin-right:auto;align-self:center">版本 ${APP_VER}</span>${isOwner()?'<button class="btn" data-act="toTransfer">📥 匯入舊存檔</button>':''}<button class="btn" data-act="help">遊戲說明</button>`,false)}
 let newOpt={name:'合',owner:'',loc:'songshan'};
 function viewNew(){
   sheet('開新店',`<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">
@@ -1674,10 +1681,16 @@ function viewTransfer(){
   ${ui.impMsg?`<div class="notice ${ui.confirmImport?'warn':''}">${ui.impMsg}</div>`:''}
   <div class="bar"><button class="btn primary" data-act="importSave">${ui.confirmImport?'確定匯入，蓋掉這裡的存檔':'匯入'}</button></div>
   <div class="muted">存檔碼會存成當天開店前的狀態。營業中途匯出的話，匯入後會從那天開店前開始。</div>`)}
+function viewOwner(){
+  sheet('🔑 店主登入',`<div>輸入店主密碼後，這台電腦就會顯示「⚙️ 設定」「🎵 音樂音效」「📦 轉移存檔」。其他人打開網頁只能玩，看不到這些選單。</div>
+  <label class="f" for="ownerPw">密碼<input id="ownerPw" type="password" autocomplete="current-password"></label>
+  ${ui.ownerMsg?`<div class="notice warn">${ui.ownerMsg}</div>`:''}`,`<button class="btn primary" data-act="ownerLogin">登入</button>`);
+  setTimeout(()=>{const i=$('#ownerPw');if(i)i.focus()},50)}
 function viewSettings(){
   sheet('⚙️ 設定',`<div class="row"><span>轉移存檔（換電腦、換到網頁版）</span><button class="btn small" data-act="toTransfer">📦 轉移存檔</button></div>
   <div class="row"><span>背景音樂、音效、日語招呼聲</span><button class="btn small" data-view="sound">🎵 到音樂音效設定</button></div>
   <div class="row"><span>開店前的新手提示</span><button class="btn small ${g.tutorial?'on':''}" data-act="tut">${g.tutorial?'開':'關'}</button></div>
+  ${ONLINE?'<div class="row"><span>店主模式（這台電腦看得到所有設定）</span><button class="btn small" data-act="ownerLogout">🔒 登出店主模式</button></div>':''}
   <div class="muted">每晚打烊後會自動存在這個瀏覽器。營業中離開的話，下次從當天開店前開始。</div>
   <div class="bar"><button class="btn" data-act="saveNow" ${rt?'disabled':''}>立即存檔</button><button class="btn" data-act="toTitleSave">回到標題畫面</button><button class="btn" data-act="wipe">${ui.confirmWipe?'確定刪除存檔？再按一次':'刪除存檔'}</button></div>`)}
 function viewParty(){
@@ -1693,6 +1706,10 @@ function viewRename(){sheet('改店名',`<label class="f">店名<input id="rName
 function toast(s){const t=$('#toast');t.textContent=s;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,2600)}
 function spend(n){if(g.cash<n){toast(`資金不足：需要 ${fmt(n)}`);return false}g.cash-=n;return true}
 const ACT={
+  ownerLogin:async()=>{const v=($('#ownerPw')||{}).value||'';let h='';try{h=await sha256(v.trim())}catch(e){}
+    if(h===OWNER_HASH){try{localStorage.setItem('izakaya-owner',OWNER_HASH)}catch(e){}ui.ownerMsg='';try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}openView('title');renderAll();toast('🔑 已登入店主模式，這台電腦可以使用所有設定')}
+    else{ui.ownerMsg='密碼不對，請再試一次。';renderView()}},
+  ownerLogout:()=>{try{localStorage.removeItem('izakaya-owner')}catch(e){}closeView();renderAll();toast('🔒 已登出店主模式')},
   close:()=>{if(ui.view==='transfer'&&ui.fromTitle){ui.fromTitle=false;openView('title');return}closeView()},
   toTransfer:()=>{ui.fromTitle=ui.view==='title';ui.expCode='';ui.impMsg='';ui.confirmImport=false;openView('transfer')},
   exportSave:async()=>{const s=load();if(!s){ui.impMsg='這裡還沒有存檔可以匯出。';renderView();return}
@@ -1737,6 +1754,7 @@ document.addEventListener('click',e=>{
   const d=t.dataset;
   if(d.nav){const n=d.nav;if(rt&&['edit','shop','promo','loan','staff'].includes(n))return;
     if(n==='edit'){ui.edit=!ui.edit;ui.placing=null;ui.sel=null;ui.tab='edit';renderAll();return}
+    if(['settings','sound','transfer'].includes(n)&&!isOwner())return;
     if(n==='transfer'){ACT.toTransfer();return}
     ui.pausedBefore=ui.paused;if(n==='staff')ui.arg='list';openView(n,n==='staff'?'list':undefined);return}
   if(d.tab){ui.tab=d.tab;renderSide();return}
@@ -1795,6 +1813,7 @@ cv.addEventListener('click',e=>{
 });
 document.addEventListener('input',e=>{if(e.target.id==='impCode'){ui.impCode=e.target.value;if(ui.confirmImport){ui.confirmImport=false;ui.impMsg=''}return}const k=e.target.dataset&&e.target.dataset.vol;if(!k)return;AUD[k]=+e.target.value;if(MG)MG.gain.value=AUD.musicVol*.6;if(SG)SG.gain.value=AUD.sfxVol;saveAud()});
 document.addEventListener('keydown',e=>{
+  if(e.target.id==='ownerPw'&&e.key==='Enter'){ACT.ownerLogin();return}
   if(e.target.tagName==='INPUT')return;
   if(e.key==='Escape'&&ui.view&&!['title','new','brief','report','over','transfer'].includes(ui.view)){closeView();return}
   if(ui.view)return;
@@ -1818,6 +1837,8 @@ function boot(){
   const s=load();
   if(s){g=s;for(const l of g.loans)attachLoan(l);rebuildMap();renderAll();openView('title')}
   else{newGame({name:'合',owner:'',loc:'songshan'},false);rebuildMap();renderAll();openView('title')}
+  if(location.hash==='#admin'){ui.ownerMsg='';openView('owner')}
+  window.addEventListener('hashchange',()=>{if(location.hash==='#admin'){ui.ownerMsg='';openView('owner')}});
   requestAnimationFrame(loop);
 }
 boot();
