@@ -113,6 +113,7 @@ table.t td.n,table.t th.n{text-align:right;font-variant-numeric:tabular-nums}
 .quote{font-family:var(--f-disp);font-weight:700}
 .big{font-family:var(--f-disp);font-weight:900;font-size:28px;letter-spacing:.04em}
 label.f{display:flex;flex-direction:column;gap:4px;font-weight:700}
+textarea.code{width:100%;font:13px/1.45 ui-monospace,Menlo,monospace;border:2px solid var(--ink);border-radius:6px;padding:8px 10px;color:var(--ink);background:#fff;word-break:break-all;resize:vertical}
 label.f input[type=range]{padding:0;border:0;accent-color:var(--shu);height:28px}
 label.f input:not([type=range]),label.f select{font:inherit;padding:8px 10px;border:2px solid var(--ink);border-radius:6px;background:#fff;color:var(--ink)}
 .opt{border:2px solid var(--ink);border-radius:8px;padding:10px 12px;text-align:left;background:#fff}
@@ -1385,6 +1386,7 @@ function renderView(){
   if(v==='help')return viewHelp();
   if(v==='settings')return viewSettings();
   if(v==='sound')return viewSound();
+  if(v==='transfer')return viewTransfer();
   if(v==='party')return viewParty();
   if(v==='over')return viewOver();
   if(v==='ending')return viewEnding();
@@ -1396,7 +1398,7 @@ function viewTitle(){
   <p style="margin:0;font-size:17px">你是老闆。你不會直接指揮員工，而是決定要請誰、賣什麼、價錢多少、桌子怎麼擺，然後拉開暖簾開店，看看哪裡卡住了再調整。目標是拿到「提燈評鑑」三盞燈。</p>
   <p style="margin:0" class="muted">營業時間預設 17:00 到 24:00。串燒、生魚片、炸物、生啤酒、清酒……客人會一輪一輪追加，飲料賣得好才賺得到錢。</p>
   ${s?`<div class="notice"><b>存檔：</b>「${esc(s.name)}」第 ${s.day} 天・${'🏮'.repeat(s.lantern)||'未獲燈'}・資金 ${fmt(s.cash)}</div>`:''}`,
-  `${s?'<button class="btn primary" data-act="continue">繼續營業</button>':''}<button class="btn ${s?'':'primary'}" data-act="toNew">開新店</button><button class="btn" data-act="help">遊戲說明</button>`,false)}
+  `${s?'<button class="btn primary" data-act="continue">繼續營業</button>':''}<button class="btn ${s?'':'primary'}" data-act="toNew">開新店</button><button class="btn" data-act="toTransfer">📥 匯入舊存檔</button><button class="btn" data-act="help">遊戲說明</button>`,false)}
 let newOpt={name:'合',owner:'',loc:'songshan'};
 function viewNew(){
   sheet('開新店',`<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">
@@ -1555,8 +1557,28 @@ function viewSound(){
   <div class="row"><span>店員用日語喊「いらっしゃいませ」</span><button class="btn small ${AUD.voice?'on':''}" data-act="voiceToggle">${AUD.voice?'開':'關'}</button></div>
   <div class="sec">試聽音效</div><div class="bar">${Object.entries(SFX).map(([k,l])=>`<button class="btn small" data-sfx="${k}">${l}</button>`).join('')}</div>
   <div class="muted">聲音全部由瀏覽器即時合成，不用下載。手機要先關掉靜音模式才聽得到。</div>`)}
+async function encodeSave(obj){const json=JSON.stringify(obj);
+  try{const cs=new Blob([json]).stream().pipeThrough(new CompressionStream('gzip'));const buf=new Uint8Array(await new Response(cs).arrayBuffer());let bin='';for(let i=0;i<buf.length;i+=8192)bin+=String.fromCharCode.apply(null,buf.subarray(i,i+8192));return'IZK1:'+btoa(bin)}
+  catch(e){return'IZK0:'+btoa(unescape(encodeURIComponent(json)))}}
+async function decodeSave(code){code=code.replace(/\s+/g,'');
+  if(code.startsWith('IZK1:')){const bin=atob(code.slice(5));const buf=Uint8Array.from(bin,c=>c.charCodeAt(0));const ds=new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'));return JSON.parse(await new Response(ds).text())}
+  if(code.startsWith('IZK0:'))return JSON.parse(decodeURIComponent(escape(atob(code.slice(5)))));
+  throw new Error('bad')}
+function viewTransfer(){
+  const s=load();
+  sheet('📦 轉移存檔',`<div>存檔只放在各自的瀏覽器裡。要把進度搬到別的地方（例如從 claude.ai 搬到網頁版、換電腦或手機），先在原本玩的地方匯出，再到新的地方匯入。</div>
+  <div class="sec">① 在原本玩的地方：匯出</div>
+  ${s?`<div>這裡的存檔：<b>「${esc(s.name)}」第 ${s.day} 天</b>・${'🏮'.repeat(s.lantern)||'未獲燈'}・資金 ${fmt(s.cash)}</div>
+  <div class="bar"><button class="btn primary" data-act="exportSave">產生存檔碼並複製</button></div>
+  ${ui.expCode?`<div><b>${ui.expMsg||''}</b></div><textarea class="code" id="expCode" rows="4" readonly>${ui.expCode}</textarea>`:''}`:'<div class="muted">這裡還沒有存檔可以匯出。</div>'}
+  <div class="sec">② 在新的地方：匯入</div>
+  <textarea class="code" id="impCode" rows="4" placeholder="在這裡貼上存檔碼（IZK 開頭的一長串）">${esc(ui.impCode||'')}</textarea>
+  ${ui.impMsg?`<div class="notice ${ui.confirmImport?'warn':''}">${ui.impMsg}</div>`:''}
+  <div class="bar"><button class="btn primary" data-act="importSave">${ui.confirmImport?'確定匯入，蓋掉這裡的存檔':'匯入'}</button></div>
+  <div class="muted">存檔碼會存成當天開店前的狀態。營業中途匯出的話，匯入後會從那天開店前開始。</div>`)}
 function viewSettings(){
-  sheet('⚙️ 設定',`<div class="row"><span>背景音樂、音效、日語招呼聲</span><button class="btn small" data-view="sound">🎵 到音樂音效設定</button></div>
+  sheet('⚙️ 設定',`<div class="row"><span>轉移存檔（換電腦、換到網頁版）</span><button class="btn small" data-act="toTransfer">📦 轉移存檔</button></div>
+  <div class="row"><span>背景音樂、音效、日語招呼聲</span><button class="btn small" data-view="sound">🎵 到音樂音效設定</button></div>
   <div class="row"><span>開店前的新手提示</span><button class="btn small ${g.tutorial?'on':''}" data-act="tut">${g.tutorial?'開':'關'}</button></div>
   <div class="muted">每晚打烊後會自動存在這個瀏覽器。營業中離開的話，下次從當天開店前開始。</div>
   <div class="bar"><button class="btn" data-act="saveNow" ${rt?'disabled':''}>立即存檔</button><button class="btn" data-act="toTitleSave">回到標題畫面</button><button class="btn" data-act="wipe">${ui.confirmWipe?'確定刪除存檔？再按一次':'刪除存檔'}</button></div>`)}
@@ -1573,7 +1595,19 @@ function viewRename(){sheet('改店名',`<label class="f">店名<input id="rName
 function toast(s){const t=$('#toast');t.textContent=s;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,2600)}
 function spend(n){if(g.cash<n){toast(`資金不足：需要 ${fmt(n)}`);return false}g.cash-=n;return true}
 const ACT={
-  close:()=>closeView(),
+  close:()=>{if(ui.view==='transfer'&&ui.fromTitle){ui.fromTitle=false;openView('title');return}closeView()},
+  toTransfer:()=>{ui.fromTitle=ui.view==='title';ui.expCode='';ui.impMsg='';ui.confirmImport=false;openView('transfer')},
+  exportSave:async()=>{const s=load();if(!s){ui.impMsg='這裡還沒有存檔可以匯出。';renderView();return}
+    ui.expCode=await encodeSave(s);let ok=false;try{await navigator.clipboard.writeText(ui.expCode);ok=true}catch(e){}
+    ui.expMsg=ok?`已複製存檔碼（${Math.ceil(ui.expCode.length/1024)} KB）。到網頁版「📥 匯入舊存檔」貼上就好。`:'瀏覽器不讓我自動複製：請點下面的框框，全選（Cmd+A）後複製（Cmd+C）。';
+    renderView();const ta=$('#expCode');if(ta&&!ok){ta.focus();ta.select()}},
+  importSave:async()=>{if(rt){ui.impMsg='營業中不能匯入，請打烊後再試。';renderView();return}
+    const code=(ui.impCode||'').trim();if(!code){ui.impMsg='請先在框框裡貼上存檔碼。';renderView();return}
+    let obj;try{obj=await decodeSave(code)}catch(e){ui.impMsg='看不懂這段存檔碼，請確認有完整複製（IZK 開頭）。';ui.confirmImport=false;renderView();return}
+    if(!obj||obj.v!==1||!obj.menu||!obj.name){ui.impMsg='這不是《我的居酒屋》的存檔。';renderView();return}
+    const cur=load();if(cur&&!ui.confirmImport){ui.confirmImport=true;ui.impPreview=obj;ui.impMsg=`這台已經有存檔「${esc(cur.name)}」第 ${cur.day} 天，匯入會蓋掉它。確定的話再按一次「匯入」。`;renderView();return}
+    g=obj;for(const t of TYPES)if(g.rep[t]==null)g.rep[t]=.5;for(const l of g.loans||[])attachLoan(l);rebuildMap();save();
+    ui.confirmImport=false;ui.impCode='';ui.fromTitle=false;closeView();ui.tab='prep';renderAll();toast(`📦 已匯入「${g.name}」第 ${g.day} 天，資金 ${fmt(g.cash)}`)},
   continue:()=>{g=load();for(const l of g.loans)attachLoan(l);for(const t of TYPES)if(g.rep[t]==null)g.rep[t]=.5;rebuildMap();closeView()},
   toNew:()=>openView('new'),toTitle:()=>openView('title'),help:()=>openView('help'),
   createGame:()=>{newOpt.name=$('#nName').value.trim()||'合';newOpt.owner=$('#nOwner').value.trim();newGame(newOpt);rebuildMap();ui.tab='prep';closeView();openView('help')},
@@ -1640,7 +1674,7 @@ document.addEventListener('click',e=>{
   if(d.place){ui.placing=ui.placing===d.place?null:d.place;ui.sel=null;ui.placeRot=0;renderAll();return}
 });
 function attachLoan(l){l.principalLeft=function(){return this.amount*this.left/this.days}}
-$('#modal').addEventListener('click',e=>{if(e.target.id==='modal'&&!['title','new','brief','report','over'].includes(ui.view))closeView()});
+$('#modal').addEventListener('click',e=>{if(e.target.id==='modal'&&!['title','new','brief','report','over','transfer'].includes(ui.view))closeView()});
 $('#brand').addEventListener('click',()=>{if(g&&!rt){ui.pausedBefore=ui.paused;openView('rename')}});
 function canvasTile(e){const r=cv.getBoundingClientRect();const x=(e.clientX-r.left)/r.width*CW,y=(e.clientY-r.top)/r.height*CH;return{px:x,py:y,x:Math.floor((x-OX)/T),y:Math.floor((y-OY)/T),fx:(x-OX)/T-.5,fy:(y-OY)/T-.5}}
 cv.addEventListener('mousemove',e=>{if(!ui.edit)return;const t=canvasTile(e);ui.hover=t.x>=0&&t.y>=0&&t.x<COLS&&t.y<ROWS?{x:t.x,y:t.y}:null});
@@ -1658,10 +1692,10 @@ cv.addEventListener('click',e=>{
       if(p.seat)for(const s of p.seat){const d2=Math.hypot(s.cx-t.fx,s.cy-t.fy);if(d2<bd){bd=d2;best=p}}}
     if(best){ui.pausedBefore=ui.paused;openView('party',best)}}
 });
-document.addEventListener('input',e=>{const k=e.target.dataset&&e.target.dataset.vol;if(!k)return;AUD[k]=+e.target.value;if(MG)MG.gain.value=AUD.musicVol*.6;if(SG)SG.gain.value=AUD.sfxVol;saveAud()});
+document.addEventListener('input',e=>{if(e.target.id==='impCode'){ui.impCode=e.target.value;if(ui.confirmImport){ui.confirmImport=false;ui.impMsg=''}return}const k=e.target.dataset&&e.target.dataset.vol;if(!k)return;AUD[k]=+e.target.value;if(MG)MG.gain.value=AUD.musicVol*.6;if(SG)SG.gain.value=AUD.sfxVol;saveAud()});
 document.addEventListener('keydown',e=>{
   if(e.target.tagName==='INPUT')return;
-  if(e.key==='Escape'&&ui.view&&!['title','new','brief','report','over'].includes(ui.view)){closeView();return}
+  if(e.key==='Escape'&&ui.view&&!['title','new','brief','report','over','transfer'].includes(ui.view)){closeView();return}
   if(ui.view)return;
   if(e.key===' '&&rt){e.preventDefault();ui.paused=!ui.paused;renderBanner()}
   if(rt&&['1','2','4','8'].includes(e.key)){ui.speed=+e.key;ui.paused=false;renderBanner()}
