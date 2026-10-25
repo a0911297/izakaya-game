@@ -1077,9 +1077,10 @@ function draw(){
   }
   // 暖光
   const grd=ctx.createRadialGradient(CW/2,OY+ROWS*T/2,40,CW/2,OY+ROWS*T/2,CW*.7);grd.addColorStop(0,'rgba(255,190,90,0)');grd.addColorStop(1,'rgba(40,20,0,.18)');ctx.fillStyle=grd;ctx.fillRect(0,0,CW,OY+ROWS*T+WALLPX);
-  // 時鐘牌
-  if(rt){ctx.fillStyle='rgba(15,20,35,.82)';rr(CW-112,sy+52,104,30,6);ctx.fill();ctx.fillStyle='#fff';ctx.font='900 17px sans-serif';ctx.textAlign='center';ctx.fillText((rt.closed?'打烊 ':'營業 ')+hhmm(rt.t),CW-60,sy+68)}
-  else{ctx.fillStyle='rgba(15,20,35,.82)';rr(CW-142,sy+52,134,30,6);ctx.fill();ctx.fillStyle='#fff';ctx.font='900 16px sans-serif';ctx.textAlign='center';ctx.fillText('準備中・'+String(g.hours.open).padStart(2,'0')+':00 開店',CW-75,sy+68)}
+  // 時鐘牌（畫面右上角）
+  ctx.textBaseline='middle';
+  if(rt){ctx.fillStyle='rgba(15,20,35,.86)';rr(CW-120,4,114,32,6);ctx.fill();ctx.fillStyle='#fff';ctx.font='900 18px sans-serif';ctx.textAlign='center';ctx.fillText((rt.closed?'打烊 ':'營業 ')+hhmm(rt.t),CW-63,20.5)}
+  else{ctx.fillStyle='rgba(15,20,35,.86)';rr(CW-150,4,144,32,6);ctx.fill();ctx.fillStyle='#fff';ctx.font='900 16px sans-serif';ctx.textAlign='center';ctx.fillText('準備中・'+String(g.hours.open).padStart(2,'0')+':00 開店',CW-78,20.5)}
 }
 function drawLantern(x,y,s){const fl=.85+.15*Math.sin(frameT*.07+x);ctx.save();ctx.translate(x,y);ctx.scale(s,s);const gl=ctx.createRadialGradient(0,6,2,0,6,26);gl.addColorStop(0,`rgba(255,170,60,${.45*fl})`);gl.addColorStop(1,'rgba(255,170,60,0)');ctx.fillStyle=gl;ctx.beginPath();ctx.arc(0,6,26,0,7);ctx.fill();ctx.fillStyle='#c4271c';ctx.beginPath();ctx.ellipse(0,6,8,11,0,0,7);ctx.fill();ctx.fillStyle='#1b1b1b';ctx.fillRect(-5,-6,10,3);ctx.fillRect(-5,16,10,3);ctx.fillStyle='#fff3d6';ctx.font='900 8px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('酒',0,7);ctx.restore()}
 function drawFurn(o){
