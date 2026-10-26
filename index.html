@@ -171,7 +171,7 @@ label.f input:not([type=range]),label.f select{font:inherit;padding:8px 10px;bor
 
 <script>
 'use strict';
-const APP_VER='2026-10-26e';
+const APP_VER='2026-10-26g';
 // 店主模式：網頁版（github.io）上只有輸入密碼的電腦看得到設定類選單；claude.ai 版一律視為店主
 const ONLINE=/github\.io$/.test(location.hostname);
 const OWNER_HASH='ed77e1a0f2358e25e8d7d31e7e7e33639d0a0468a3f62875b695d5e6438763a1';
@@ -362,6 +362,7 @@ const EQUIP={
   qr:{label:'QR 掃碼點餐',cost:20000,daily:300,L:1,desc:'約三成的點單由客人自己掃碼，不用叫外場。每日平台費 $300。'},
   pay:{label:'行動支付',cost:8000,daily:0,L:0,desc:'結帳快一倍，客人滿意度微升。收款付 1.5% 手續費。'},
   tv:{label:'運動轉播電視',cost:15000,daily:30,L:0,desc:'環境 +3。有棒球轉播的晚上，下班族會多很多。每日電費 $30。'},
+  chalk:{label:'今日推薦黑板',cost:15000,daily:0,L:0,desc:'門口立一塊手寫黑板：菜單上限 +2 道。'},
 };
 const KITCHEN=[{cap:2,cost:0,L:0,label:'標準廚房'},{cap:3,cost:80000,L:1,label:'擴充廚房'},{cap:4,cost:160000,L:2,label:'大廚房'}];
 const PROMOS={
@@ -397,12 +398,12 @@ const CW=COLS*T+WALLPX*2,CH=WALLPX+ROWS*T+WALLPX+STREET;
 const OX=WALLPX,OY=WALLPX;
 const PX=x=>OX+x*T+T/2,PY=y=>OY+y*T+T/2;
 const KIT={x:0,y:0,w:4,h:3},BAR={x:5,y:0,w:6,h:2},WC={x:14,y:0,w:2,h:2},REG={x:1,y:7};
-const DOOR={x:8,y:8},KPICK={x:4,y:2},BPICK={x:11,y:1},REG_STAFF={x:1,y:6},REG_CUST={x:1,y:8};
+const DOOR={x:8,y:8},KPICK={x:4,y:2},BPICK={x:11,y:1},REG_STAFF={x:1,y:6},REG_CUST={x:1,y:8},WC_DOOR={x:14,y:2};
 const STOOLS=[5,6,7,8,9,10].map(x=>({x,y:2}));
 const OUT_Y=9.75;
 const inRect=(x,y,r)=>x>=r.x&&x<r.x+r.w&&y>=r.y&&y<r.y+r.h;
 const fixedBlocked=(x,y)=>inRect(x,y,KIT)||inRect(x,y,BAR)||inRect(x,y,WC)||(x===REG.x&&y===REG.y);
-const RESERVED=new Set([[DOOR.x,DOOR.y],[8,7],[KPICK.x,KPICK.y],[BPICK.x,BPICK.y],[REG_STAFF.x,REG_STAFF.y],[REG_CUST.x,REG_CUST.y],...STOOLS.map(s=>[s.x,s.y])].map(([x,y])=>y*COLS+x));
+const RESERVED=new Set([[DOOR.x,DOOR.y],[8,7],[KPICK.x,KPICK.y],[BPICK.x,BPICK.y],[REG_STAFF.x,REG_STAFF.y],[REG_CUST.x,REG_CUST.y],[WC_DOOR.x,WC_DOOR.y],...STOOLS.map(s=>[s.x,s.y])].map(([x,y])=>y*COLS+x));
 function footprint(o){const d=FURN[o.kind];const w=o.rot?d.h:d.w,h=o.rot?d.w:d.h;const a=[];for(let i=0;i<w;i++)for(let j=0;j<h;j++)a.push({x:o.x+i,y:o.y+j});return a}
 function buildBlock(layout){const b=new Uint8Array(COLS*ROWS);for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)if(fixedBlocked(x,y))b[y*COLS+x]=1;for(const o of layout)for(const t of footprint(o))if(t.x>=0&&t.y>=0&&t.x<COLS&&t.y<ROWS)b[t.y*COLS+t.x]=1;return b}
 const DIRS=[[1,0],[-1,0],[0,1],[0,-1]];
@@ -418,7 +419,7 @@ function validateLayout(layout){
     seen.set(k,o);
   }}
   const b=buildBlock(layout),d=bfsDist(b,DOOR.x,DOOR.y);
-  const need=[[KPICK,'廚房出餐口'],[BPICK,'吧台出酒口'],[REG_STAFF,'收銀台'],[REG_CUST,'收銀台前'],...STOOLS.map(s=>[s,'吧台座位'])];
+  const need=[[WC_DOOR,'廁所門口'],[KPICK,'廚房出餐口'],[BPICK,'吧台出酒口'],[REG_STAFF,'收銀台'],[REG_CUST,'收銀台前'],...STOOLS.map(s=>[s,'吧台座位'])];
   for(const[p,n]of need)if(d[p.y*COLS+p.x]<0)return{ok:false,msg:`走道被擋住，到不了${n}`};
   for(const o of layout){if(!FURN[o.kind].cap)continue;let okk=false;for(const t of footprint(o))for(const[dx,dy]of DIRS){const nx=t.x+dx,ny=t.y+dy;if(nx<0||ny<0||nx>=COLS||ny>=ROWS)continue;if(d[ny*COLS+nx]>=0)okk=true}if(!okk)return{ok:false,msg:`有一張${FURN[o.kind].label}走不到`}}
   return{ok:true}
@@ -477,14 +478,14 @@ function activate(S0){
   for(const l of S.loans)attachLoan(l);
   RT=S.shops.map(()=>null);MAPS=[];
   S.shops.forEach((sh,i)=>{bindShop(S,sh);for(const m of MENU)if(!sh.menu[m.id])sh.menu[m.id]={on:!!m.season,pm:1,auto:true,qty:0,stock:0,sold:5};
-    for(const t of TYPES)if(sh.rep[t]==null)sh.rep[t]=.5;sh.openedDay=sh.openedDay||1;g=sh;rebuildMap();MAPS[i]=MAP;if(!sh.today)planDay()});
+    for(const t of TYPES)if(sh.rep[t]==null)sh.rep[t]=.5;sh.openedDay=sh.openedDay||1;sh.nomi=sh.nomi||{on:false,price:590};sh.course=sh.course||{on:false,price:1480};g=sh;rebuildMap();MAPS[i]=MAP;if(!sh.today)planDay()});
   S.cur=clamp(S.cur||0,0,S.shops.length-1);setCtx(S.cur);rt=null}
 function makeShop(o){
   const sh={name:o.name||'合',owner:o.owner||'',loc:o.loc,lantern:0,rep:Object.fromEntries(TYPES.map(t=>[t,o.rep||.5])),staff:[],nextId:1,menu:{},
     layout:[{uid:1,kind:'t4',x:6,y:5,rot:0},{uid:2,kind:'t4',x:10,y:5,rot:0},{uid:3,kind:'t2',x:13,y:3,rot:0},{uid:4,kind:'t2',x:3,y:5,rot:0}],nextUid:5,
     storage:{},wall:{lantern:2},styles:{floor:'concrete',wall:'white',noren:'ai',uniform:'tee'},equip:{},kitchen:0,
     promos:[],sign:false,hours:{open:17,close:24},nextHours:null,history:[],usedChars:{},applicants:[],adFree:true,
-    inspectorDay:null,inspectWait:0,lanternDay:0,buzzUntil:0,viralUntil:0,badUntil:0,hikeUntil:0,repBoostUntil:0,last:null,today:null,ended:false,tutorial:true,openedDay:o.day||1};
+    inspectorDay:null,inspectWait:0,lanternDay:0,buzzUntil:0,viralUntil:0,badUntil:0,hikeUntil:0,repBoostUntil:0,last:null,today:null,ended:false,tutorial:true,openedDay:o.day||1,nomi:{on:false,price:590},course:{on:false,price:1480}};
   const on=['edamame','kyuri','potesara','negima','kawa','butabara','shiitake','tsukune','karaage','fries','tamagoyaki','yakiudon','ochazuke','nama','highball','lemonsour'];
   for(const m of MENU)sh.menu[m.id]={on:on.includes(m.id)||!!m.season,pm:1,auto:true,qty:0,stock:0,sold:isDrink(m)?24:10};
   return sh}
@@ -576,7 +577,7 @@ function checkAch(){const out=[];for(const a of ACH){const v=a.val();let tier=0;
 const lanternOf=()=>g.lantern;
 const hallCap=()=>HALL_CAP[g.lantern];
 const kitchenCap=()=>KITCHEN[g.kitchen].cap;
-const menuCap=()=>MENU_CAP[g.lantern];
+const menuCap=()=>MENU_CAP[g.lantern]+(g.kitchen||0)*3+(g.equip&&g.equip.chalk?2:0);
 const staffOf=r=>g.staff.filter(s=>s.role===r);
 const hasPerk=p=>g.staff.some(s=>s.perk===p&&!s.sick);
 const wageOf=s=>s.wage;
@@ -604,7 +605,7 @@ function enterProb(t,qlen){
   const c=CT[t];const parts={};
   parts.rep=(g.rep[t]-1.5)*.06;
   const r=estSpend(t)/c.pp;parts.price=r>1?-(r-1)*.7:(1-r)*.12;
-  parts.menu=(menuFit(t)-.5)*.3;
+  parts.menu=(menuFit(t)-.5)*.3+(g.nomi&&g.nomi.on&&(t==='friends'||t==='office')?.04:0)+(g.course&&g.course.on&&t==='office'?.02:0);
   parts.env=(envScore()-40)/100*.3*c.w.env;
   parts.queue=-qlen*.09;
   const p=clamp(.34+parts.rep+parts.price+parts.menu+parts.env+parts.queue+g.lantern*.05,.03,.92);
@@ -665,7 +666,7 @@ function startDay(){
   const day={t:g.hours.open*60,open:g.hours.open*60,close:g.hours.close*60,parties:[],tasks:[],tickets:[],log:[],peds:[],pid:1,tid:1,kid:1,
     rev:0,stockCost:0,fees:0,served:0,parties_n:0,sat:[],satBy:Object.fromEntries(TYPES.map(t=>[t,[]])),angry:0,angryBy:Object.fromEntries(TYPES.map(t=>[t,0])),
     funnel:Object.fromEntries(TYPES.map(t=>[t,{pass:0,notice:0,enter:0,happy:0}])),why:{rep:0,price:0,menu:0,env:0,queue:0,seat:0},complain:{},sold:{},waste:0,
-    closed:false,done:false,outage:0,inspected:false,fine:0,repDelta:{},firedEvents:{},inspectorRes:null,bloggerRes:null,bookingRes:null,busy:{}};
+    closed:false,done:false,outage:0,inspected:false,fine:0,repDelta:{},firedEvents:{},inspectorRes:null,bloggerRes:null,bookingRes:null,busy:{},nomiN:0,courseN:0,feeRev:0,spots:[],wc:0,dishes:0};
   rt=day;
   // 進貨
   for(const m of MENU){const e=g.menu[m.id];if(!e.on||!avail(m)){if(!isDrink(m)||!avail(m))e.stock=0;continue}
@@ -722,7 +723,7 @@ function findSeat(p){
   return tabs[0]?[tabs[0]]:null;
 }
 function queueSlot(i){return i===0?{x:DOOR.x,y:DOOR.y}:{x:DOOR.x-.85*i,y:OUT_Y}}
-function addTask(type,o){const tk=Object.assign({id:rt.tid++,type,created:rt.t,staff:null,prio:{bill:5,serve:4,drink:3.5,order:3,seat:3,clean:1}[type]},o);rt.tasks.push(tk);return tk}
+function addTask(type,o){const tk=Object.assign({id:rt.tid++,type,created:rt.t,staff:null,prio:{wc:1.2,sweep:.8,bill:5,serve:4,drink:3.5,order:3,seat:3,clean:1.6}[type]},o);rt.tasks.push(tk);return tk}
 function drainMul(){let m=hasPerk('calm')?.85:1;return m}
 function updateParties(dt){
   const qs=rt.parties.filter(p=>p.state==='queue');
@@ -754,6 +755,7 @@ function seatParty(p){
   if(p.seat.some(t=>t.dirty))p.dirtySeat=true;
 }
 function placeOrder(p,waiter){
+  if(p.round===0)chooseCourse(p);
   const items=makeOrder(p);
   if(!items.length){if(p.round===0){angryLeave(p,'想點的都賣完了');return}goPay(p);return}
   p.round++;p.orderAt=rt.t;p.state='dining';p.since=rt.t;
@@ -775,30 +777,51 @@ function itemWeight(m,p,round){
   if(m.cat==='甜點')w*=round>=2?1:.3;
   return Math.max(.05,w);
 }
+// ================= 套餐：飲み放題、宴會套餐 =================
+const nomiOK=m=>isDrink(m)&&!m.tags.includes('高級');
+function buildCourse(size){
+  const ls=listed().filter(m=>!isDrink(m));const qty=Math.max(1,Math.ceil(size/2));
+  const best=(cats,n,skip=[])=>ls.filter(m=>cats.includes(m.cat)&&!skip.includes(m.id)).sort((a,b)=>b.q-a.q||a.p-b.p).slice(0,n);
+  const s1=best(['小菜'],2),s2=[...best(['串燒'],2),...best(['炸物'],1)],s3a=best(['料理'],1),s3=[...s3a,...best(['〆'],1),...best(['甜點'],1)];
+  return[s1,s2,s3].map(st=>st.map(m=>({id:m.id,qty}))).filter(st=>st.length)}
+function chooseCourse(p){
+  if(g.course&&g.course.on&&(p.size>=4||p.flags.booking)){const pr=g.course.price;const prob=(p.flags.booking?.85:p.size>=6?.45:.25)*Math.min(1.2,p.pp*2/pr)**2;
+    if(Math.random()<prob){const steps=buildCourse(p.size);if(steps.length>=2){p.course=true;p.nomi=true;p.fee=pr*p.size;p.courseSteps=steps;p.courseStep=0;p.nomiStart=rt.t;rt.courseN++;log(`🎊 #${p.id} ${p.size} 人點了宴會套餐（${fmt(p.fee)}）`);return}}}
+  if(g.nomi&&g.nomi.on){const base={friends:.5,office:.42,tourist:.25,couple:.18,biz:.12,night:.1}[p.type]||.2;const pr=g.nomi.price;
+    const prob=base*Math.min(1.3,590/pr)**2*Math.min(1.2,p.pp/600);
+    if(Math.random()<prob){p.nomi=true;p.fee=pr*p.size;p.nomiStart=rt.t;rt.nomiN++;log(`🍻 #${p.id} ${p.size} 人點了飲み放題`)}}}
 function makeOrder(p){
-  const c=CT[p.type],ls=listed(),out=[];const budget=p.pp*p.size*1.15;let spent=p.served.reduce((s,x)=>s+x.price,0);
+  const c=CT[p.type],ls=listed(),out=[];const budget=p.pp*p.size*1.15-(p.fee||0)*.7;let spent=p.served.reduce((s,x)=>s+x.price,0);
   const add=(pool,round)=>{let m=wpick(pool,x=>itemWeight(x,p,round));if(!m)return;let e=g.menu[m.id];
     if(e.stock<=0){p.stockout++;const alt=pool.filter(x=>g.menu[x.id].stock>0&&x.cat===m.cat);m=alt.length?wpick(alt,x=>itemWeight(x,p,round)):null;if(!m)return;e=g.menu[m.id]}
-    const pr=priceOf(m.id);if(spent+pr>budget)return;
+    const free=!!(p.nomi&&nomiOK(m));const pr=priceOf(m.id);if(!free&&spent+pr>budget)return;
     let qty=1;if(m.cat==='串燒'&&pr<=120&&p.size>=3&&e.stock>=2)qty=2;
-    e.stock-=qty;spent+=pr*qty;const ex=out.find(x=>x.id===m.id);if(ex)ex.qty+=qty;else out.push({id:m.id,qty})};
+    e.stock-=qty;if(!free)spent+=pr*qty;const ex=out.find(x=>x.id===m.id&&!!x.incl===free);if(ex)ex.qty+=qty;else out.push({id:m.id,qty,incl:free})};
   const drinks=ls.filter(m=>isDrink(m)),food=ls.filter(m=>!isDrink(m));
   const r=p.round+1;
-  for(let i=0;i<p.size;i++){const pr=r===1?.97:.8*c.drink;if(Math.random()<pr)add(drinks,r)}
+  const nomiPool=p.nomi?(Math.random()<.92?drinks.filter(nomiOK):drinks):drinks;
+  for(let i=0;i<p.size;i++){const pr=p.nomi?(r===1?1:.93):(r===1?.97:.8*c.drink);if(Math.random()<pr)add(nomiPool.length?nomiPool:drinks,r)}
+  if(p.course){const step=p.courseSteps[p.courseStep]||[];p.courseStep++;
+    for(const x of step){const e=g.menu[x.id];if(!e||e.stock<=0){p.stockout++;continue}const q=Math.min(x.qty,e.stock);e.stock-=q;out.push({id:x.id,qty:q,incl:true})}
+    if(Math.random()<.2)add(food,r);
+    return out}
   let nf=r===1?Math.ceil(p.size*1.0)+ri(0,1):Math.max(1,Math.round(p.size*.6+rnd(-.3,.8)));
   if(p.type==='night'&&r===1)nf=Math.max(1,Math.round(p.size*.7));
+  if(p.nomi&&r>1)nf=Math.max(0,Math.round(nf*.6));
   for(let i=0;i<nf;i++)add(food,r);
   return out;
 }
 function decideNext(p){
   const c=CT[p.type];const spent=p.served.reduce((s,x)=>s+x.price,0);
+  if(p.course&&p.courseStep<p.courseSteps.length&&rt.t<rt.close-30){p.state='menu';p.menuUntil=rt.t+rnd(.5,1);return}
   const sat=calcSat(p).total;
-  let pm=c.more*(sat/80)-(p.round-1)*.1+(hasPerk('upsell')?.1:0);
-  if(p.round>=c.maxR||rt.t>=rt.close-30||spent>=p.pp*p.size*.95)pm=0;
+  let pm=c.more*(sat/80)-(p.round-1)*.1+(hasPerk('upsell')?.1:0)+(p.nomi?.25:0);
+  const nomiOver=p.nomi&&rt.t-p.nomiStart>=120;
+  if(p.round>=c.maxR+(p.nomi?2:0)||rt.t>=rt.close-30||nomiOver||(!p.nomi&&spent>=p.pp*p.size*.95))pm=0;
   if(Math.random()<pm){p.state='menu';p.menuUntil=rt.t+rnd(.5,1.5)}
   else goPay(p);
 }
-function freeSeat(p){if(!p.seat)return;for(const t of p.seat){t.party=null;if(p.served.length){t.dirty=true;if(!rt.tasks.some(k=>k.type==='clean'&&k.table===t))addTask('clean',{table:t})}}p.seat=null}
+function freeSeat(p){if(!p.seat)return;if(p.served.length&&rt.spots.length<14&&Math.random()<.55){const a=p.seat[0].access;const z={x:a.x+rnd(-.25,.25),y:a.y+rnd(-.2,.2),k:pick(['crumbs','beer','napkin'])};rt.spots.push(z);addTask('sweep',{spot:z})}for(const t of p.seat){t.party=null;if(p.served.length){t.dirty=true;if(!rt.tasks.some(k=>k.type==='clean'&&k.table===t))addTask('clean',{table:t})}}p.seat=null}
 function goPay(p){const n=rt.parties.filter(x=>x.state==='toPay'||x.state==='waitPay').length;p.state='toPay';p.since=rt.t;freeSeat(p);routeTo(p,REG_CUST.x,REG_CUST.y);if(n>0)p.path.push({x:REG_CUST.x+Math.min(n,4)*.7,y:REG_CUST.y})}
 function calcSat(p){
   const c=CT[p.type],w=c.w;const parts={};
@@ -806,19 +829,22 @@ function calcSat(p){
   const fs=p.served.filter(x=>x.q!=null);const q=fs.length?fs.reduce((s,x)=>s+x.q,0)/fs.length:null;
   const expect=52+g.lantern*5;parts.food=q==null?0:(q-expect)*.55*w.food;
   const pms=p.served.length?p.served.reduce((s,x)=>s+g.menu[x.id].pm,0)/p.served.length:1;
-  const spentPP=p.served.reduce((s,x)=>s+x.price,0)/p.size;
-  parts.price=(-(pms-1)*40-(spentPP>CT[p.type].pp*1.05?(spentPP/CT[p.type].pp-1)*30:0))*w.price;
+  const spentPP=(p.served.reduce((s,x)=>s+x.price,0)+(p.fee||0))/p.size;
+  parts.price=(-(pms-1)*40-(!p.fee&&spentPP>CT[p.type].pp*1.05?(spentPP/CT[p.type].pp-1)*30:0))*w.price;
+  if(p.fee&&['toPay','waitPay','leave'].includes(p.state)){const v=(p.inclValue||0)/p.fee;parts.price+=v>=1?Math.min(8,(v-1)*12):-(1-v)*20}
   const sv=p.svc.length?p.svc.reduce((a,b)=>a+b,0)/p.svc.length:50;parts.svc=(sv-50)*.18*w.svc+(g.equip.pay?2:0);
   parts.env=(envScore()-40)*.2*w.env;
-  parts.other=-p.stockout*4-(p.dirtySeat?8:0)+(p.type==='tourist'&&hasPerk('tourist')?8:0);
+  parts.other=-p.stockout*4-(p.dirtySeat?8:0)-(rt?(rt.wc>70?5:rt.wc>55?1.5:0)+Math.min(4,rt.spots.length*.5):0)+(p.type==='tourist'&&hasPerk('tourist')?8:0);
   const total=clamp(82+Object.values(parts).reduce((a,b)=>a+b,0),0,100);
   return{total,parts,q};
 }
 function payAndGo(p,impatient){
-  const amt=p.served.reduce((s,x)=>s+x.price,0);
+  const amt=p.served.reduce((s,x)=>s+x.price,0)+(p.fee||0);if(p.fee)rt.feeRev+=p.fee;
   let sat=calcSat(p).total;if(impatient)sat=Math.min(sat,45);
   if(amt>0){g.cash+=amt;rt.rev+=amt;if(g.equip.pay){const fee=amt*.4*.015;rt.fees+=fee;g.cash-=fee}cash();}
   rt.served+=p.size;rt.sat.push(sat);rt.satBy[p.type].push(sat);if(sat>=70)rt.funnel[p.type].happy++;
+  if(rt.wc>75&&Math.random()<.25)rt.complain['廁所太髒']=(rt.complain['廁所太髒']||0)+1;
+  rt.wc+=p.size*rnd(1.5,3.5);if(rt.wc>=40&&!rt.tasks.some(k=>k.type==='wc'&&!k.done&&!k.dead))addTask('wc',{});
   if(impatient){rt.complain['結帳等太久']=(rt.complain['結帳等太久']||0)+1}
   specialResult(p,sat);
   p.finalSat=sat;p.state='leave';routeOut(p);
@@ -826,8 +852,8 @@ function payAndGo(p,impatient){
 }
 function angryLeave(p,why){
   if(p.state==='leave'||p.state==='gone')return;
-  const amt=p.served.reduce((s,x)=>s+x.price,0);
-  if(amt>0){g.cash+=amt;rt.rev+=amt}
+  const amt=p.served.length?p.served.reduce((s,x)=>s+x.price,0)+(p.fee||0):0;
+  if(amt>0){g.cash+=amt;rt.rev+=amt;if(p.fee)rt.feeRev+=p.fee}
   rt.angry++;rt.angryBy[p.type]++;sfx('angry');rt.complain[why]=(rt.complain[why]||0)+1;
   rt.sat.push(0);rt.satBy[p.type].push(0);if(amt>0)rt.served+=p.size;
   if(p.seat)freeSeat(p);
@@ -848,15 +874,17 @@ function assignSeats(){
 }
 // ---- 廚房與吧台 ----
 function chefMul(s){return(1.35-s.st.sp*.007)*(s.mood<30?1.25:1)}
+const STATION_OF={'串燒':'grill','炸物':'fry','小菜':'prep','甜點':'prep','料理':'stove','〆':'stove'};
 function updateKitchen(dt){
   const out=rt.t<rt.outage;
   for(const c of rt.chefs){
     if(c.ticket){c.busy+=dt;if(out){c.until+=dt;continue}
       if(c.ticket.status==='void'){c.ticket=null;continue}
-      if(rt.t>=c.until){const tk=c.ticket;tk.status='ready';tk.readyAt=rt.t;tk.q=tk.items.map(x=>dishQ(x.id,c.s));c.ticket=null;addTask('serve',{p:tk.p,ticket:tk})}
+      if(rt.t>=c.until){const tk=c.ticket;tk.status='ready';tk.readyAt=rt.t;tk.q=tk.items.map(x=>dishQ(x.id,c.s));c.ticket=null;c.plateUntil=rt.t+1.2;addTask('serve',{p:tk.p,ticket:tk})}
       continue}
     const tk=rt.tickets.find(x=>x.station==='k'&&x.status==='queued');
-    if(tk&&!out){tk.status='cooking';tk.by=c.s.name;c.ticket=tk;
+    if(!tk||out){c.wash=(rt.dishes||0)>0&&!out;if(c.wash)rt.dishes=Math.max(0,rt.dishes-dt*2.5)}
+    if(tk&&!out){tk.status='cooking';tk.by=c.s.name;c.ticket=tk;c.wash=false;c.t0=rt.t;c.stations=[...new Set(tk.items.map(x=>STATION_OF[MI[x.id].cat]||'prep'))];
       const times=tk.items.map(x=>{let t=MI[x.id].t*(1+(x.qty-1)*.3);const m=MI[x.id];if(c.s.perk==='grill'&&m.cat==='串燒')t*=.85;if(c.s.perk==='fry'&&m.cat==='炸物')t*=.85;return t});
       const tot=times.reduce((a,b)=>a+b,0),mx=Math.max(...times);c.until=rt.t+(tot*.45+mx*.55)*chefMul(c.s)*(c.s.perk==='fast'?.85:1);sfx('sizzle')}
   }
@@ -869,14 +897,17 @@ function dishQ(id,s){
   if(Math.random()<Math.max(0,45-s.st.sk)/150){q-=25;if(rt)log(`😖 ${s.name}做「${m.n}」失手了`,'bad')}
   return clamp(q,0,100);
 }
+const BARX={tap:10.07,shake:7.7,sake:5.9,soft:8.9};
+const drinkKind=m=>m.cat==='飲料'?'soft':(m.tags.includes('清酒')||m.tags.includes('燒酎'))?'sake':(m.id==='nama'||m.id==='bigbeer')?'tap':'shake';
 function updateBar(dt){
   for(const b of rt.bars){
     if(b.ticket){b.busy+=dt;if(b.ticket.status==='void'){b.ticket=null;continue}
-      if(rt.t>=b.until){const tk=b.ticket;tk.status='ready';tk.readyAt=rt.t;tk.q=tk.items.map(x=>dishQ(x.id,b.s));b.ticket=null;addTask('serve',{p:tk.p,ticket:tk})}
-      b.x+=(b.tx-b.x)*Math.min(1,dt*3);continue}
+      const pr=clamp((rt.t-b.t0)/Math.max(.01,b.until-b.t0),0,.999);b.kind=b.seq[Math.floor(pr*b.seq.length)];b.tx=BARX[b.kind];
+      if(rt.t>=b.until){const tk=b.ticket;tk.status='ready';tk.readyAt=rt.t;tk.q=tk.items.map(x=>dishQ(x.id,b.s));b.ticket=null;b.kind=null;addTask('serve',{p:tk.p,ticket:tk})}
+      b.x+=(b.tx-b.x)*Math.min(1,dt*5);continue}
     const tk=rt.tickets.find(x=>x.station==='b'&&x.status==='queued');
-    if(tk){tk.status='cooking';tk.by=b.s.name;b.ticket=tk;const n=tk.items.reduce((s,x)=>s+x.qty,0);b.until=rt.t+n*.9*(1.35-b.s.st.sp*.007)*(g.equip.beer?.7:1)*(b.s.perk==='beer'?.7:1);b.tx=rnd(5.5,10.5)}
-    else{b.tx=7.8;b.x+=(b.tx-b.x)*Math.min(1,dt*2)}
+    if(tk){tk.status='cooking';tk.by=b.s.name;b.ticket=tk;const n=tk.items.reduce((s,x)=>s+x.qty,0);b.until=rt.t+n*.9*(1.35-b.s.st.sp*.007)*(g.equip.beer?.7:1)*(b.s.perk==='beer'?.7:1);b.t0=rt.t;b.seq=[];for(const x of tk.items)for(let k=0;k<x.qty;k++)b.seq.push(drinkKind(MI[x.id]));b.tx=BARX[b.seq[0]]}
+    else{b.kind=null;b.tx=7.8;b.x+=(b.tx-b.x)*Math.min(1,dt*2)}
   }
 }
 // ---- 外場 ----
@@ -889,14 +920,16 @@ function buildSteps(w,tk){
     case'drink':{const n=tk.ticket.items.reduce((s2,x)=>s2+x.qty,0);return[{go:BPICK},{run:()=>{tk.ticket.status='cooking';tk.ticket.by=s.name}},{wait:n*1.2*f*(g.equip.beer?.7:1),run:()=>{tk.ticket.status='ready';tk.ticket.q=tk.ticket.items.map(()=>45+rnd(-5,5));}},{goTo:()=>tk.p.seat?tk.p.seat[0].access:null},{wait:.3,run:()=>deliver(tk.ticket,w)}]}
     case'serve':{const pk=tk.ticket.station==='k'?KPICK:BPICK;return[{go:pk},{wait:.2,run:()=>{tk.ticket.status='serving'}},{goTo:()=>tk.p.seat?tk.p.seat[0].access:null},{wait:.3,run:()=>deliver(tk.ticket,w)}]}
     case'bill':return[{go:REG_STAFF},{wait:1.3*f*(g.equip.pay?.5:1),run:()=>{if(tk.p.state==='waitPay'){tk.p.svc.push(s.st.sv);payAndGo(tk.p,false);ka()}}}];
-    case'clean':return[{go:tk.table.access},{wait:1.3*f,run:()=>{tk.table.dirty=false}}];
+    case'clean':return[{go:tk.table.access},{wait:1.3*f,run:()=>{tk.table.dirty=false;rt.dishes=(rt.dishes||0)+tk.table.cap}}];
+    case'wc':return[{go:WC_DOOR},{wait:2.4*f,run:()=>{rt.wc=0;log(`🧻 ${s.name}把廁所打掃乾淨了`)}}];
+    case'sweep':return[{go:{x:Math.round(tk.spot.x),y:Math.round(tk.spot.y)}},{wait:.9*f,run:()=>{rt.spots=rt.spots.filter(z=>z!==tk.spot)}}];
   }
   return[];
 }
 function deliver(tk,w){
   if(tk.status==='void'||tk.p.state!=='dining'){tk.status='done';return}
   tk.status='done';const p=tk.p;p.pending--;sfx(tk.station==='b'?'pour':'serve');p.svc.push(w.s.st.sv);
-  tk.items.forEach((x,i)=>{const pr=priceOf(x.id);for(let k=0;k<x.qty;k++)p.served.push({id:x.id,price:pr,q:tk.q?tk.q[i]:50})});
+  tk.items.forEach((x,i)=>{const pr=x.incl?0:priceOf(x.id);if(x.incl)p.inclValue=(p.inclValue||0)+priceOf(x.id)*x.qty;for(let k=0;k<x.qty;k++)p.served.push({id:x.id,price:pr,q:tk.q?tk.q[i]:50})});
   if(tk.station==='b')p.gotDrink=true;
   if(p.pending===0)p.eatUntil=rt.t+rnd(13,21)*(p.round===1?1.15:.9);
 }
@@ -931,7 +964,7 @@ function updateEvents(){
   for(const e of g.today.events){
     if(!e.at||rt.firedEvents[e.id]||rt.t<e.at)continue;rt.firedEvents[e.id]=1;
     if(e.id==='outage'){rt.outage=rt.t+20;log('⚡ 跳電了！廚房暫停出餐約 20 分鐘','bad')}
-    if(e.id==='inspection'){const dirty=MAP.tables.filter(t=>t.dirty).length;
+    if(e.id==='inspection'){const dirty=MAP.tables.filter(t=>t.dirty).length+(rt.wc>60?2:0)+(rt.spots.length>4?1:0);
       if(dirty>=3){rt.fine=6000;g.cash-=6000;rt.repDelta.all=(rt.repDelta.all||0)-.15;log(`🧑‍⚕️ 衛生局稽查：有 ${dirty} 張髒桌子沒收，罰款 $6,000，聲望下降`,'bad')}
       else if(dirty>0){log(`🧑‍⚕️ 衛生局稽查：有 ${dirty} 張桌子沒收，口頭警告`)}
       else{rt.repDelta.all=(rt.repDelta.all||0)+.08;log('🧑‍⚕️ 衛生局稽查：店內很乾淨，聲望上升','good')}}
@@ -947,14 +980,18 @@ function tick(dt){
   updateEvents();updateParties(dt);assignSeats();updateKitchen(dt);updateBar(dt);updateStaff(dt);
   for(const pd of rt.peds)pd.x+=pd.dir*pd.spd*dt;rt.peds=rt.peds.filter(pd=>pd.x>-3&&pd.x<19);
   if(!rt.closed&&Math.random()<dt*.25)spawnPed(false);
-  if(rt.closed&&!rt.parties.length&&!rt.done&&rt.hall.every(w=>!w.task||w.task.type==='clean')){rt.done=true;finishDay()}
+  if(rt.closed&&!rt.parties.length&&!rt.done){
+    if(!rt.closingClean){rt.closingClean=true;if(rt.wc>10&&!rt.tasks.some(k=>k.type==='wc'&&!k.done&&!k.dead))addTask('wc',{});if(rt.spots.length||rt.wc>10)log('🧹 打烊了，外場開始收拾店裡')}
+    const pending=rt.tasks.some(k=>!k.done&&!k.dead&&(k.type==='sweep'||k.type==='wc'));
+    if((!pending&&rt.hall.every(w=>!w.task||w.task.type==='clean'))||rt.t>rt.close+120){rt.done=true;finishDay()}}
 }
 
 // ================= 打烊結算 =================
 function finishDay(){
   const hrs=g.hours.close-g.hours.open+1;
   for(const c of rt.chefs)rt.busy[c.s.id]=c.busy;for(const b of rt.bars)rt.busy[b.s.id]=b.busy;for(const w of rt.hall)rt.busy[w.s.id]=w.busy;
-  let waste=0;for(const m of MENU){const e=g.menu[m.id];e.sold=rt.sold[m.id]||0;if(!isDrink(m)&&e.stock>0){waste+=e.stock*costOf(m.id);e.stock=0}}
+  let waste=0;for(const m of MENU){const e=g.menu[m.id];e.sold=rt.sold[m.id]||0;e.waste=0;if(e.on&&avail(m))e.hist=(e.hist||[]).concat([e.sold]).slice(-7);if(!isDrink(m)&&e.stock>0){e.waste=e.stock;waste+=e.stock*costOf(m.id);e.stock=0}}
+  g.lastNomi=rt.nomiN;g.lastCourse=rt.courseN;
   const wages=g.staff.reduce((s,x)=>s+x.wage*hrs,0);
   const rent=LOCS[g.loc].rent;const util=900+120*hrs;
   let fees=Object.keys(g.equip).reduce((s,k)=>s+EQUIP[k].daily,0);
@@ -999,7 +1036,7 @@ function finishDay(){
   g.inspectorDay=null;
   if(g.lantern<3&&g.day>=g.inspectWait&&lanternConds().every(c=>c.ok))g.inspectorDay=g.day+1;
   const idx=S.shops.indexOf(g);
-  ui.dayReports[idx]={rec,cost,profit,avgSat,funnel:rt.funnel,why:rt.why,complain:rt.complain,sold:rt.sold,waste,staffNotes,repBefore,lanternMsg,name:g.name};
+  ui.dayReports[idx]={rec,cost,profit,avgSat,funnel:rt.funnel,why:rt.why,complain:rt.complain,sold:rt.sold,waste,staffNotes,repBefore,lanternMsg,name:g.name,nomiN:rt.nomiN,courseN:rt.courseN,feeRev:rt.feeRev};
   if(g.nextHours){g.hours=g.nextHours;g.nextHours=null}
   ui.lastLogs[idx]=rt.log;RT[idx]=null;rt=null;
   if(!busyDay())endOfDayAll();
@@ -1188,42 +1225,77 @@ function draw(){
   const uk=Math.min(g.wall.ukiyoe||0,3);for(let i=0;i<uk;i++){const x=OX+T*(12)+i*20;ctx.fillStyle='#2b1d12';ctx.fillRect(x,2,16,12);ctx.fillStyle='#3f6aa0';ctx.fillRect(x+2,4,12,8);ctx.fillStyle='#f1ede4';ctx.beginPath();ctx.arc(x+10,8,3,Math.PI,0);ctx.fill()}
   const fl=Math.min(g.wall.flag||0,2);for(let i=0;i<fl;i++){const y=OY+T*(3+i*2.5);ctx.fillStyle='#d23a2a';ctx.fillRect(CW-WALLPX,y,WALLPX,30);ctx.fillStyle='#f5d33a';ctx.fillRect(CW-WALLPX,y+10,WALLPX,10);ctx.fillStyle='#1c58a8';ctx.fillRect(CW-WALLPX,y+20,WALLPX,10)}
   if(g.wall.board){ctx.fillStyle='#c9a46a';for(let i=0;i<5;i++)ctx.fillRect(OX+T*11.2+i*6,1,5,OY-2)}
-  // 廚房
+  // 廚房：炭火台、爐台、油炸鍋、備料台、洗碗槽、出餐口
   const kx=OX+KIT.x*T,ky=OY+KIT.y*T;
   ctx.fillStyle='#b9bec4';ctx.fillRect(kx,ky,KIT.w*T,KIT.h*T);
-  ctx.strokeStyle='#9aa0a7';for(let i=0;i<KIT.w*2;i++)for(let j=0;j<KIT.h*2;j++)ctx.strokeRect(kx+i*T/2,ky+j*T/2,T/2,T/2);
+  ctx.strokeStyle='#9aa0a7';ctx.lineWidth=1;for(let i=0;i<KIT.w*2;i++)for(let j=0;j<KIT.h*2;j++)ctx.strokeRect(kx+i*T/2,ky+j*T/2,T/2,T/2);
   ctx.fillStyle='#6c7178';ctx.fillRect(kx,ky,KIT.w*T,14);
+  const chefList=rt?rt.chefs:staffOf('chef').slice(0,kitchenCap()).map((s,i)=>({s,slot:i,ticket:null}));
+  const stAt=st=>chefList.some(c=>c.st===st&&c.arrived);
   // 炭火台
   ctx.fillStyle='#2b2b2b';rr(kx+6,ky+2,T*1.6,22,3);ctx.fill();
   for(let i=0;i<8;i++){const fl2=.5+.5*Math.sin(frameT*.12+i*1.7);ctx.fillStyle=`rgba(${220+fl2*35|0},${70+fl2*60|0},20,${.7+fl2*.3})`;ctx.beginPath();ctx.arc(kx+12+i*7,ky+13,3.2,0,7);ctx.fill()}
-  ctx.fillStyle='#ddd';ctx.font='700 10px sans-serif';ctx.fillText('炭火',kx+T*1.6/2+6,ky+30);
+  if(stAt('grill')){for(let i=0;i<4;i++){const sx=kx+16+i*13;ctx.strokeStyle='#d9c08a';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(sx-6,ky+6);ctx.lineTo(sx+6,ky+20);ctx.stroke();ctx.fillStyle=i%2?'#8a4a22':'#a85a2a';for(let k=0;k<3;k++){ctx.beginPath();ctx.arc(sx-3+k*3,ky+9.5+k*3.5,2.4,0,7);ctx.fill()}}
+    for(let i=0;i<6;i++){const ph=(frameT*.7+i*17)%100;ctx.fillStyle=`rgba(200,200,200,${(1-ph/100)*.5})`;ctx.beginPath();ctx.arc(kx+18+i*9+Math.sin(ph*.08+i)*3,ky+10-ph*.32,3+ph*.07,0,7);ctx.fill()}}
+  ctx.fillStyle='#e8e8e8';ctx.font='700 10px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('炭火',kx+T*.83,ky+31);
+  // 爐台＋平底鍋
   ctx.fillStyle='#8d939a';rr(kx+T*2.2,ky+2,T*1.6,22,3);ctx.fill();ctx.fillStyle='#4a4f55';ctx.beginPath();ctx.arc(kx+T*2.6,ky+13,7,0,7);ctx.arc(kx+T*3.4,ky+13,7,0,7);ctx.fill();
+  if(stAt('stove')){ctx.strokeStyle='rgba(80,140,255,.9)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(kx+T*3.4,ky+13,8,0,7);ctx.stroke();
+    const toss=Math.max(0,Math.sin(frameT*.22))**6*7;ctx.fillStyle='#2a2a2a';ctx.beginPath();ctx.ellipse(kx+T*3.4,ky+13-toss*.4,9,6,0,0,7);ctx.fill();ctx.fillRect(kx+T*3.4+8,ky+11-toss*.4,10,3);
+    ctx.fillStyle='#d8a050';for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(kx+T*3.4-4+i*3,ky+12-toss*(1+i*.3),1.6,0,7);ctx.fill()}
+    for(let i=0;i<3;i++){const ph=(frameT*.6+i*30)%90;ctx.fillStyle=`rgba(255,255,255,${(1-ph/90)*.45})`;ctx.beginPath();ctx.arc(kx+T*3.4+(i-1)*5,ky+6-ph*.25,2.5+ph*.05,0,7);ctx.fill()}}
+  else{ctx.fillStyle='#3a3a3a';ctx.beginPath();ctx.ellipse(kx+T*2.6,ky+13,7,5,0,0,7);ctx.fill()}
+  // 油炸鍋
+  const fx0=kx+T*3.25,fy0=ky+T*1.05;ctx.fillStyle='#9aa1a8';rr(fx0,fy0,T*.65,T*.8,3);ctx.fill();ctx.fillStyle='#d9a441';rr(fx0+3,fy0+3,T*.65-6,T*.8-6,2);ctx.fill();
+  ctx.strokeStyle='#555';ctx.lineWidth=1.2;ctx.strokeRect(fx0+6,fy0+8,T*.65-12,T*.8-18);
+  if(stAt('fry'))for(let i=0;i<9;i++){const ph=(frameT*.9+i*13)%40;ctx.fillStyle=`rgba(255,240,190,${1-ph/40})`;ctx.beginPath();ctx.arc(fx0+5+((i*7)%18),fy0+6+((i*11)%22),1+ph*.04,0,7);ctx.fill()}
+  // 備料台（砧板）與洗碗槽
+  ctx.fillStyle='#c9a46a';rr(kx+4,ky+T*2.45,T*1.45,T*.5,3);ctx.fill();ctx.fillStyle='#f0e2c0';rr(kx+14,ky+T*2.52,T*.8,T*.34,2);ctx.fill();
+  ctx.fillStyle='#a9b0b7';rr(kx+T*1.7,ky+T*2.45,T*1.15,T*.5,3);ctx.fill();ctx.fillStyle='#7e868e';rr(kx+T*1.78,ky+T*2.52,T*.98,T*.34,3);ctx.fill();
+  const dishN=rt?Math.min(6,Math.ceil((rt.dishes||0)/3)):0;for(let i=0;i<dishN;i++){ctx.fillStyle='#f6f3ec';ctx.beginPath();ctx.ellipse(kx+T*2.0+(i%3)*9,ky+T*2.68-Math.floor(i/3)*3,4.5,2.2,0,0,7);ctx.fill();ctx.strokeStyle='#bbb';ctx.lineWidth=.6;ctx.stroke()}
   // 出餐口
   ctx.fillStyle='#d8d2c4';ctx.fillRect(OX+(KIT.x+KIT.w)*T-10,OY+KPICK.y*T+4,10,T-8);
-  ctx.fillStyle='#fff';ctx.font='700 10px sans-serif';ctx.save();ctx.translate(OX+4*T-5,OY+KPICK.y*T+T/2);ctx.rotate(-Math.PI/2);ctx.fillStyle='#222';ctx.fillText('出餐',0,0);ctx.restore();
-  // 廚房出餐台上的菜
-  if(rt){const ready=rt.tickets.filter(t=>t.station==='k'&&t.status==='ready');ready.slice(0,4).forEach((t,i)=>{ctx.font='14px serif';ctx.fillText('🍢',OX+4*T-14,OY+KPICK.y*T+8+i*9)})}
-  // 廚師
-  const chefs=rt?rt.chefs:staffOf('chef').slice(0,kitchenCap()).map((s,i)=>({s,slot:i,ticket:null}));
-  const cslots=[{x:.7,y:1.3},{x:2.3,y:1.3},{x:1.5,y:2.2},{x:3.1,y:2.2}];
-  chefs.forEach(c=>{const sl=cslots[c.slot%4];const bob=c.ticket?Math.sin(frameT*.3+c.slot)*2:0;drawPerson(kx+sl.x*T,ky+sl.y*T+12+bob,c.ticket?0:2,c.s,{});if(c.ticket){ctx.font='13px serif';ctx.fillText('🔥',kx+sl.x*T+13,ky+sl.y*T-22)}});
+  ctx.save();ctx.translate(OX+4*T-5,OY+KPICK.y*T+T/2);ctx.rotate(-Math.PI/2);ctx.fillStyle='#222';ctx.font='700 10px sans-serif';ctx.textAlign='center';ctx.fillText('出餐',0,0);ctx.restore();
+  if(rt){const ready=rt.tickets.filter(t=>t.station==='k'&&t.status==='ready');ready.slice(0,4).forEach((t,i)=>{ctx.font='14px serif';ctx.textAlign='center';ctx.fillText('🍢',OX+4*T-14,OY+KPICK.y*T+8+i*9)})}
+  // 料理人：依菜色走到不同工作站
+  const SP={grill:{x:.95,y:1.25,d:0},stove:{x:3.0,y:1.25,d:0},fry:{x:2.75,y:1.95,d:1},prep:{x:.9,y:2.35,d:2},wash:{x:2.28,y:2.35,d:2},plate:{x:3.5,y:2.55,d:1}};
+  const idleSpot=[{x:.6,y:1.8},{x:1.75,y:1.65},{x:2.5,y:1.95},{x:1.2,y:2.15}];
+  chefList.forEach((c,i)=>{let st=null;
+    if(rt&&c.plateUntil>rt.t)st='plate';else if(rt&&c.ticket&&c.stations&&c.stations.length){const pr=clamp((rt.t-c.t0)/Math.max(.01,c.until-c.t0),0,.999);st=c.stations[Math.floor(pr*c.stations.length)]}else if(c.wash)st='wash';
+    const same=chefList.filter((o,j)=>j<i&&o.st===st&&st).length;
+    const tg=st?SP[st]:idleSpot[c.slot%4];const tx=kx+tg.x*T+same*15,ty=ky+tg.y*T;
+    if(c.px==null){c.px=tx;c.py=ty}const dx=tx-c.px,dy=ty-c.py,mv=Math.hypot(dx,dy)>1.5;
+    if(!ui.paused&&!ui.view){const k=Math.min(.4,.18*Math.max(1,ui.speed/2));c.px+=dx*k;c.py+=dy*k}c.st=st;c.arrived=!mv;
+    const dir=mv?(Math.abs(dx)>Math.abs(dy)?(dx>0?1:3):(dy>0?2:0)):(st?SP[st].d:2);
+    const act=!mv&&st&&st!=='plate';
+    drawPerson(c.px,c.py,dir,c.s,{moving:mv,seated:act,carry:st==='plate'?'food':null});
+    if(act)drawChefFx(st,c.px,c.py);
+  });
   // 吧台
   const bx=OX+BAR.x*T,by=OY+BAR.y*T;
   ctx.fillStyle='#3a2a1c';ctx.fillRect(bx,by,BAR.w*T,T);
-  // 酒瓶架
   for(let i=0;i<BAR.w*4;i++){ctx.fillStyle=['#5c8a3a','#7a3b1f','#d9c37a','#2d5f7a','#8a1f2a'][i%5];rr(bx+4+i*9.5,by+1,6,12,2);ctx.fill()}
-  // 吧台手（站在檯面後面）
+  // 吧台手（站在檯面後面，走到生啤機、雪克杯、清酒區）
   const bars=rt?rt.bars:staffOf('bar').slice(0,1).map(s=>({s,x:7.8,ticket:null}));
-  bars.forEach(b=>{drawPerson(OX+b.x*T+T/2,by+T*1.15,2,b.s,{carry:b.ticket?'drink':null})});
+  bars.forEach(b=>{const working=!!(b.kind&&Math.abs(b.x-b.tx)<.12);const walking=!!(b.ticket&&Math.abs(b.x-b.tx)>=.12);
+    drawPerson(OX+b.x*T+T/2,by+T*1.15,walking?(b.tx>b.x?1:3):2,b.s,{seated:working,moving:walking})});
   ctx.fillStyle='#b98a56';ctx.fillRect(bx,by+T,BAR.w*T,T);ctx.fillStyle='#a37444';ctx.fillRect(bx,by+T+T-8,BAR.w*T,8);
   ctx.fillStyle='#e9e2d2';ctx.fillRect(OX+BPICK.x*T-6,OY+BPICK.y*T+4,6,T-8);
   // 生啤機
   ctx.fillStyle=g.equip.beer?'#c9ccd1':'#8f9399';rr(bx+BAR.w*T-26,by+T+4,18,14,3);ctx.fill();ctx.fillStyle='#e0a800';ctx.fillRect(bx+BAR.w*T-20,by+T+10,6,6);
-  if(rt){const ready=rt.tickets.filter(t=>t.station==='b'&&t.status==='ready');ready.slice(0,4).forEach((t,i)=>{ctx.font='13px serif';ctx.fillText('🍺',bx+20+i*16,by+T+14)})}
+  for(const b of bars){if(!b.kind||Math.abs(b.x-b.tx)>=.12)continue;const cx=OX+b.x*T+T/2,ty=by+T;
+    if(b.kind==='tap'){const tapX=bx+BAR.w*T-17,f=(frameT%50)/50;ctx.strokeStyle='rgba(230,170,30,.95)';ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(tapX,ty+16);ctx.lineTo(tapX,ty+22);ctx.stroke();
+      ctx.fillStyle='rgba(255,255,255,.6)';rr(tapX-4.5,ty+21,9,12,1.5);ctx.fill();ctx.fillStyle='#e8a820';ctx.fillRect(tapX-4,ty+32.5-10*f,8,10*f);ctx.fillStyle='#fffaf0';ctx.fillRect(tapX-4,ty+31-10*f,8,2.4)}
+    if(b.kind==='shake'){const sy=ty-8+Math.sin(frameT*.9)*4;ctx.fillStyle='#d6dbe0';rr(cx-4,sy,8,14,2);ctx.fill();ctx.fillStyle='#9aa3ad';ctx.fillRect(cx-4,sy+4,8,1.6);ctx.fillStyle='#eef1f4';rr(cx-2.5,sy-3,5,4,1.5);ctx.fill()}
+    if(b.kind==='sake'){ctx.save();ctx.translate(cx+8,ty+4);ctx.rotate(-.95+Math.sin(frameT*.1)*.1);ctx.fillStyle='#f0ebe0';rr(-3,-11,6,13,3);ctx.fill();ctx.fillStyle='#2d4f8a';ctx.fillRect(-3,-7,6,3);ctx.restore();
+      ctx.strokeStyle='rgba(220,235,255,.95)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cx+15,ty+3);ctx.quadraticCurveTo(cx+18,ty+9,cx+17,ty+14);ctx.stroke();ctx.fillStyle='#f4f1ea';rr(cx+13.5,ty+14,7,5,1.5);ctx.fill()}
+    if(b.kind==='soft'){ctx.fillStyle='rgba(180,230,255,.75)';rr(cx+8,ty+9,8,11,1.5);ctx.fill();ctx.fillStyle='#fff';ctx.fillRect(cx+9.5,ty+11,2.4,2.4);ctx.fillRect(cx+12.5,ty+14,2.4,2.4)}}
+  if(rt){const ready=rt.tickets.filter(t=>t.station==='b'&&t.status==='ready');ready.slice(0,4).forEach((t,i)=>{ctx.font='13px serif';ctx.textAlign='center';ctx.fillText('🍺',bx+20+i*16,by+T+14)})}
   // 吧台椅
   STOOLS.forEach(s=>{ctx.fillStyle='#4a3020';ctx.beginPath();ctx.arc(PX(s.x),PY(s.y)-6,11,0,7);ctx.fill();ctx.fillStyle='#7a5032';ctx.beginPath();ctx.arc(PX(s.x),PY(s.y)-6,8,0,7);ctx.fill()});
   // 廁所
-  const wx=OX+WC.x*T,wy=OY+WC.y*T;ctx.fillStyle='#cfd8dc';ctx.fillRect(wx,wy,WC.w*T,WC.h*T);ctx.fillStyle='#5a6b74';ctx.fillRect(wx,wy+WC.h*T-6,WC.w*T,6);ctx.fillStyle='#8a5a3a';ctx.fillRect(wx+T*.6,wy+WC.h*T-6,T*.8,6);ctx.font='18px serif';ctx.fillText('🚻',wx+T,wy+T*.8);
+  const wx=OX+WC.x*T,wy=OY+WC.y*T;ctx.fillStyle='#cfd8dc';ctx.fillRect(wx,wy,WC.w*T,WC.h*T);ctx.fillStyle='#5a6b74';ctx.fillRect(wx,wy+WC.h*T-6,WC.w*T,6);ctx.fillStyle='#8a5a3a';ctx.fillRect(wx+T*.15,wy+WC.h*T-6,T*.7,6);ctx.font='18px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🚻',wx+T,wy+T*.8);
+  if(rt&&rt.wc>45){ctx.font='12px serif';ctx.fillText(rt.wc>70?'🪰💨':'🪰',wx+T*.5+Math.sin(frameT*.2)*4,wy+WC.h*T-16)}
   // 收銀台
   ctx.fillStyle='#5a3a22';rr(OX+REG.x*T+3,OY+REG.y*T+6,T-6,T-12,4);ctx.fill();ctx.fillStyle='#ddd';ctx.fillRect(OX+REG.x*T+10,OY+REG.y*T+10,20,10);ctx.font='12px serif';ctx.fillText(g.equip.pay?'📱':'💴',PX(REG.x),PY(REG.y)+8);
   // 家具、客人、外場：依腳底的 y 由上往下畫，前面的會擋住後面的
@@ -1234,11 +1306,12 @@ function draw(){
     for(const p of rt.parties){const pm=partyMembers(p);p._pm=pm;pm.out.forEach(m=>D.push({y:m.y,f:()=>drawChar(m.x,m.y,m.dir,m.L,{seated:m.seated,moving:m.moving,scale:.92,expr:m.expr})}))}
     for(const w of rt.hall){const tk=w.task;const carry=tk&&((tk.type==='serve'&&w.step>=3)||(tk.type==='drink'&&w.step>=4))?(tk.type==='drink'||tk.ticket.station==='b'?'drink':'food'):null;
       const mv=w.path.length>0;const x=PX(w.x),y=PY(w.y)+10;const dir=mv||w.busyUntil>rt.t?w.face:2;
-      D.push({y,f:()=>{drawPerson(x,y,dir,w.s,{moving:mv,carry});if(w.task){const ic={seat:'🙇',order:'📝',drink:'🍺',serve:'🍢',bill:'💴',clean:'🧽'}[w.task.type];ctx.font='12px serif';ctx.textAlign='center';ctx.fillText(ic,x+13,y-36)}}})}
+      D.push({y,f:()=>{drawPerson(x,y,dir,w.s,{moving:mv,carry});if(w.task){const ic={seat:'🙇',order:'📝',drink:'🍺',serve:'🍢',bill:'💴',clean:'🧽',wc:'🧻',sweep:'🧹'}[w.task.type];ctx.font='12px serif';ctx.textAlign='center';ctx.fillText(ic,x+13,y-36)}}})}
   }else{
     const homes=[{x:6,y:7},{x:10,y:7},{x:12,y:4},{x:4,y:6},{x:13,y:7},{x:9,y:3}];
     staffOf('hall').forEach((s,i)=>{const h=homes[i%homes.length];const y=PY(h.y)+10;D.push({y,f:()=>drawPerson(PX(h.x),y,2,s,{})})});
   }
+  if(rt)for(const z of rt.spots){const x=PX(z.x),y=PY(z.y)+8;if(z.k==='beer'){ctx.fillStyle='rgba(225,170,40,.55)';ctx.beginPath();ctx.ellipse(x,y,9,5,.3,0,7);ctx.fill()}else if(z.k==='napkin'){ctx.save();ctx.translate(x,y);ctx.rotate(.5);ctx.fillStyle='#f4f1ea';ctx.fillRect(-4,-4,8,8);ctx.restore()}else{ctx.fillStyle='#6b4a2a';for(let i=0;i<6;i++){ctx.beginPath();ctx.arc(x+Math.cos(i*2.1)*6,y+Math.sin(i*1.7)*3,1.4,0,7);ctx.fill()}}}
   D.sort((a,b)=>a.y-b.y);for(const d of D)d.f();
   if(ui.edit)drawEditOverlay();
   if(rt){
@@ -1316,6 +1389,12 @@ function staffLook(s){
 }
 function shade(hex,amt){const n=parseInt(hex.slice(1),16);let r=n>>16,gg=n>>8&255,b=n&255;const f=amt<0?0:255,t=Math.abs(amt);r=Math.round(r+(f-r)*t);gg=Math.round(gg+(f-gg)*t);b=Math.round(b+(f-b)*t);return`rgb(${r},${gg},${b})`}
 // 經營遊戲式的 Q 版人物：x,y 是腳底；dir 0 背面、1 朝右、2 正面、3 朝左
+function drawChefFx(st,x,y){
+  if(st==='prep'){const ch=Math.abs(Math.sin(frameT*.55))*4;ctx.strokeStyle='#e4e8ec';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x+3,y+5-ch);ctx.lineTo(x+11,y+5-ch);ctx.stroke();ctx.strokeStyle='#5a3a22';ctx.beginPath();ctx.moveTo(x+11,y+5-ch);ctx.lineTo(x+14,y+5-ch);ctx.stroke();
+    ctx.fillStyle='#6aa84f';for(let i=0;i<5;i++){ctx.beginPath();ctx.arc(x-8+i*3,y+10,1.4,0,7);ctx.fill()}}
+  if(st==='wash'){for(let i=0;i<6;i++){const ph=(frameT*.8+i*17)%60;ctx.strokeStyle=`rgba(255,255,255,${1-ph/60})`;ctx.lineWidth=1;ctx.beginPath();ctx.arc(x-10+i*4,y+9-ph*.15,1.4+ph*.03,0,7);ctx.stroke()}}
+  if(st==='fry'){for(let i=0;i<4;i++){if(Math.sin(frameT*.4+i*1.9)>.55){ctx.fillStyle='#f2c94c';ctx.beginPath();ctx.arc(x+18+Math.cos(i*2)*5,y-18+Math.sin(frameT*.3+i)*3,1.3,0,7);ctx.fill()}}}
+}
 function drawChar(x,y,dir,L,o={}){
   const sc=o.scale||1,side=dir===1||dir===3,back=dir===0;
   ctx.save();ctx.translate(x,y);ctx.scale(sc,sc);if(dir===3)ctx.scale(-1,1);
@@ -1498,6 +1577,7 @@ function drawPartyOverlay(p,pm){
     ctx.strokeStyle=col;ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y,10,-Math.PI/2,-Math.PI/2+Math.PI*2*clamp(p.patience,0,100)/100);ctx.stroke();
     ctx.font='12px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(ic,x,y+1)}
   if(p.flags.booking&&p.state!=='leave'){ctx.font='12px serif';ctx.fillText('🎊',x+16,y)}
+  if(p.nomi&&p.state!=='leave'){ctx.font='12px serif';ctx.textAlign='center';ctx.fillText(p.course?'🍱':'🍻',x-17,y)}
   if(ui.sel&&ui.sel.party===p){ctx.strokeStyle='#ffd34d';ctx.lineWidth=2.5;ctx.strokeRect(x-14,lead.y-38,28,42)}
 }
 function drawEditOverlay(){
@@ -1557,7 +1637,7 @@ function renderSide(){
     h+=sec('k','🔪 廚房')+sec('b','🍶 吧台'+(rt.bars.length?'':'（外場兼做）'));
     const open=rt.tasks.filter(t=>!t.staff&&!t.dead);
     h+=`<div class="sec">🙇 外場待辦（${open.length}）</div>`;
-    const tn={seat:'帶位',order:'點餐',drink:'做飲料',serve:'送餐',bill:'結帳',clean:'收桌'};
+    const tn={seat:'帶位',order:'點餐',drink:'做飲料',serve:'送餐',bill:'結帳',clean:'收桌',wc:'掃廁所',sweep:'掃地'};
     const cnt={};open.forEach(t=>cnt[t.type]=(cnt[t.type]||0)+1);h+=`<div>${Object.keys(cnt).map(k=>`<span class="chip">${tn[k]} ${cnt[k]}</span>`).join(' ')||'<span class="muted">沒有積壓</span>'}</div>`;
     h+=rt.hall.map(w=>`<div class="row"><span>${esc(w.s.name)}</span><span class="muted">${w.task?tn[w.task.type]:'待命'}</span></div>`).join('');
   }
@@ -1668,7 +1748,7 @@ function viewReport(){
   <div class="kpi"><div>來客<b>${r.guests} 人</b></div><div>平均滿意度<b>${Math.round(r.sat)}</b></div><div>生氣離開<b>${r.angry} 組</b></div><div>本日損益<b class="${r.profit>=0?'good':'bad'}">${fmt(r.profit)}</b></div></div>
   <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
    <div><div class="sec">收支</div><table class="t">${pnl.map(([k,v])=>`<tr><td>${k}</td><td class="n ${v<0?'bad':''}">${fmt(v)}</td></tr>`).join('')}<tr><th>本日損益</th><th class="n">${fmt(r.profit)}</th></tr></table>
-   <div class="muted" style="margin-top:4px">沒賣完丟掉的食材：${fmt(R.waste)}（已包含在進貨裡）。飲料可以留到明天。${R.loanPay?`<br>還款 ${fmt(R.loanPay)} 已從資金扣除。`:''}</div></div>
+   <div class="muted" style="margin-top:4px">沒賣完丟掉的食材：${fmt(R.waste)}（已包含在進貨裡）。飲料可以留到明天。${R.nomiN||R.courseN?`<br>今天 ${R.nomiN} 組點飲み放題、${R.courseN} 組點宴會套餐，套餐收入 ${fmt(R.feeRev)}（已含在營業額）。`:''}${R.loanPay?`<br>還款 ${fmt(R.loanPay)} 已從資金扣除。`:''}</div></div>
    <div><div class="sec">客層</div><div class="tw"><table class="t"><tr><th>客層</th><th class="n">經過</th><th class="n">注意到</th><th class="n">進店</th><th class="n">滿意</th></tr>${TYPES.map(t=>{const f=R.funnel[t];return`<tr><td>${CT[t].icon} ${CT[t].label}</td><td class="n">${f.pass}</td><td class="n">${f.notice}</td><td class="n">${f.enter}</td><td class="n">${f.happy}</td></tr>`}).join('')}</table></div></div>
   </div>
   <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
@@ -1716,20 +1796,59 @@ function genApplicants(adId,role){
     out.push(s)}
   return out;
 }
+function menuStats(){
+  const ls=listed().filter(m=>!m.season);const avgOf=e=>e.hist&&e.hist.length?e.hist.reduce((a,b)=>a+b,0)/e.hist.length:null;
+  const rows=ls.map(m=>{const e=g.menu[m.id];const a=avgOf(e);return{m,a,val:a==null?-1:a*(priceOf(m.id)-costOf(m.id))}}).sort((x,y)=>y.val-x.val);
+  const rank={};rows.forEach((r,i)=>{if(r.val>=0)rank[r.m.id]=i+1});return{rank,avgOf,n:rows.length}}
+function viewCourse(){
+  const N=g.nomi,C=g.course;const steps=buildCourse(6);
+  return`<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+  <div class="card ${N.on?'sel':''}"><h3>🍻 飲み放題（兩小時喝到飽）</h3>
+   <div>客人一人付固定價錢，啤酒、沙瓦、Highball、清酒、燒酎和軟性飲料隨便喝；純米大吟釀這類高級酒另外算。朋友聚會和下班族最常點。</div>
+   <div>客人會多喝很多杯，吧台和外場會更忙，飲料進貨也會增加。價錢訂太高沒人點，訂太低會賠酒錢。</div>
+   <div class="row"><span>開放點選</span><button class="btn small ${N.on?'on':''}" data-act="toggleNomi">${N.on?'開':'關'}</button></div>
+   <div class="row"><span>每人價錢</span><span class="bar" style="flex-wrap:nowrap"><button class="btn small" data-cprice="nomi:-50">−</button><b class="num" style="min-width:64px;text-align:center">${fmt(N.price)}</b><button class="btn small" data-cprice="nomi:50">＋</button></span></div>
+   <div class="muted">昨天 ${g.lastNomi||0} 組點了</div></div>
+  <div class="card ${C.on?'sel':''}"><h3>🎊 宴會套餐（含飲み放題）</h3>
+   <div>四人以上的團體和訂位客會點。廚房分三輪出菜，飲料喝到飽。客單價高，但廚房和吧台壓力也大。尾牙季特別好用。</div>
+   <div class="row"><span>開放點選</span><button class="btn small ${C.on?'on':''}" data-act="toggleCourse">${C.on?'開':'關'}</button></div>
+   <div class="row"><span>每人價錢</span><span class="bar" style="flex-wrap:nowrap"><button class="btn small" data-cprice="course:-100">−</button><b class="num" style="min-width:64px;text-align:center">${fmt(C.price)}</b><button class="btn small" data-cprice="course:100">＋</button></span></div>
+   <div><b>目前的套餐內容</b>（從上架的菜自動挑，以 6 人為例）：${steps.length?steps.map((st,i)=>`<div>第 ${i+1} 輪：${st.map(x=>MI[x.id].n+'×'+x.qty).join('、')}</div>`).join(''):'<div class="bad">上架的菜太少，排不出套餐。</div>'}</div>
+   ${steps.length<2?'<div class="notice warn">至少要有小菜、串燒或炸物、料理或〆其中兩類上架，才排得出套餐。</div>':''}
+   <div class="muted">昨天 ${g.lastCourse||0} 組點了</div></div>
+  </div>`}
 function viewMenu(){
   const cat=ui.menuTab;const ls=listed();
-  let h=`<div class="row" style="flex-wrap:wrap"><div><b>上架 ${regularCount()}／${menuCap()} 道</b>${ls.length>regularCount()?`＋季節限定 ${ls.length-regularCount()} 道`:''}（料理 ${ls.filter(m=>!isDrink(m)).length}・飲料 ${ls.filter(m=>isDrink(m)).length}）</div><div class="muted">價錢可以 −30% 到 +50%。料理當天沒賣完會丟掉，飲料可以留著。</div></div>`;
-  h+=`<div class="subtabs">${CATS.map(c=>`<button class="btn small ${cat===c?'on':''}" data-mtab="${c}">${c}（${ls.filter(m=>m.cat===c).length}）</button>`).join('')}</div>`;
-  h+='<div class="tw"><table class="t"><tr><th>品項</th><th>標籤</th><th class="n">成本</th><th class="n">售價</th><th class="n">調理</th><th>進貨</th><th></th></tr>';
-  for(const m of MENU.filter(x=>x.cat===cat)){const e=g.menu[m.id];const sOff=m.season&&!avail(m);const lock=m.L>g.lantern||sOff;const pr=priceOf(m.id);const margin=Math.round((1-costOf(m.id)/pr)*100);
-    h+=`<tr style="${lock?'opacity:.5':''}"><td><b>${m.n}</b>${m.season?`<br><span class="chip k">${SEASON_BY[m.season].icon} ${SEASON_BY[m.season].label}限定${sOff?`（${SEASON_BY[m.season].from.join('/')}–${SEASON_BY[m.season].to.join('/')}）`:'・不佔名額'}</span>`:lock?`<br><span class="chip r">需要 ${'🏮'.repeat(m.L)}</span>`:''}</td><td><div class="chips">${m.tags.map(t=>`<span class="chip">${t}</span>`).join('')}</div></td><td class="n">$${Math.round(costOf(m.id))}</td>
+  const capTxt=`燈數 ${MENU_CAP[g.lantern]}${g.kitchen?`＋廚房 ${g.kitchen*3}`:''}${g.equip.chalk?'＋黑板 2':''}`;
+  let h=`<div class="row" style="flex-wrap:wrap"><div><b>上架 ${regularCount()}／${menuCap()} 道</b>（${capTxt}）${ls.length>regularCount()?`＋季節限定 ${ls.length-regularCount()} 道`:''}・料理 ${ls.filter(m=>!isDrink(m)).length}・飲料 ${ls.filter(m=>isDrink(m)).length}</div><div class="muted">升級廚房、買「今日推薦黑板」可以多上架幾道。</div></div>`;
+  h+=`<div class="subtabs">${CATS.map(c=>`<button class="btn small ${cat===c?'on':''}" data-mtab="${c}">${c}（${ls.filter(m=>m.cat===c).length}）</button>`).join('')}<button class="btn small ${cat==='course'?'on':''}" data-mtab="course">🍶 套餐${g.nomi.on||g.course.on?'（開放中）':''}</button></div>`;
+  if(cat==='course'){h+=viewCourse();sheet('📜 菜單',h);return}
+  h+=`<div class="bar"><button class="btn small" data-act="menuPrune">🧹 下架賣不好的</button><button class="btn small ${ui.confirmRec?'on':''}" data-act="menuRecommend">${ui.confirmRec?'確定照推薦重排？再按一次':'✨ 依客層推薦上架'}</button><button class="btn small" data-act="menuResetPrice">↩ 價錢回到標準</button></div>`;
+  const ST=menuStats();
+  h+='<div class="tw"><table class="t"><tr><th>品項</th><th>標籤</th><th class="n">成本</th><th class="n">售價</th><th>成績</th><th>進貨</th><th></th></tr>';
+  for(const m of MENU.filter(x=>x.cat===cat)){const e=g.menu[m.id];const sOff=m.season&&!avail(m);const lock=m.L>g.lantern||sOff;const pr=priceOf(m.id);const margin=Math.round((1-costOf(m.id)/pr)*100);const a=ST.avgOf(e);
+    h+=`<tr style="${lock?'opacity:.5':''}"><td><b>${m.n}</b><br><span class="muted" style="font-size:13px">調理 ${m.t} 分</span>${m.season?`<br><span class="chip k">${SEASON_BY[m.season].icon} ${SEASON_BY[m.season].label}限定${sOff?`（${SEASON_BY[m.season].from.join('/')}–${SEASON_BY[m.season].to.join('/')}）`:'・不佔名額'}</span>`:lock?`<br><span class="chip r">需要 ${'🏮'.repeat(m.L)}</span>`:''}</td><td><div class="chips">${m.tags.map(t=>`<span class="chip">${t}</span>`).join('')}</div></td><td class="n">$${Math.round(costOf(m.id))}</td>
     <td class="n"><div class="bar" style="justify-content:flex-end;flex-wrap:nowrap"><button class="btn small" data-pm="${m.id}:-1" ${lock?'disabled':''}>−</button><b style="min-width:52px;display:inline-block">$${pr}</b><button class="btn small" data-pm="${m.id}:1" ${lock?'disabled':''}>＋</button></div><span class="${e.pm>1?'bad':e.pm<1?'good':'muted'}" style="font-size:13px">${e.pm===1?'標準價':(e.pm>1?'+':'')+Math.round((e.pm-1)*100)+'%'}・毛利 ${margin}%</span></td>
-    <td class="n">${m.t} 分</td>
-    <td>${e.on?`<div class="bar" style="flex-wrap:nowrap"><button class="btn small ${e.auto?'on':''}" data-auto="${m.id}">${e.auto?'自動':'手動'}</button>${e.auto?`<span class="muted num">昨賣 ${e.sold}</span>`:`<button class="btn small" data-qty="${m.id}:-5">−5</button><b class="num">${e.qty}</b><button class="btn small" data-qty="${m.id}:5">+5</button>`}</div>${isDrink(m)&&e.stock?`<span class="muted">庫存 ${e.stock}</span>`:''}`:'—'}</td>
+    <td style="font-size:14px;white-space:nowrap">${e.on&&!m.season?`昨賣 <b>${e.sold||0}</b>${!isDrink(m)?`・丟 <b class="${(e.waste||0)>3?'bad':''}">${e.waste||0}</b>`:''}<br>7 天平均 ${a==null?'—':a.toFixed(1)}${ST.rank[m.id]?`・<b>第 ${ST.rank[m.id]} 名</b>`:''}`:'—'}</td>
+    <td>${e.on?`<div class="bar" style="flex-wrap:nowrap"><button class="btn small ${e.auto?'on':''}" data-auto="${m.id}">${e.auto?'自動':'手動'}</button>${e.auto?'':`<button class="btn small" data-qty="${m.id}:-5">−5</button><b class="num">${e.qty}</b><button class="btn small" data-qty="${m.id}:5">+5</button>`}</div>${isDrink(m)&&e.stock?`<span class="muted">庫存 ${e.stock}</span>`:''}`:'—'}</td>
     <td><button class="btn small ${e.on?'on':''}" data-on="${m.id}" ${lock?'disabled':''}>${e.on?'上架中':'上架'}</button></td></tr>`}
-  h+='</table></div>';
+  h+='</table></div><div class="muted">「第幾名」是用近 7 天平均賣出份數 × 每份毛利排的，數字越小越賺。</div>';
   h+=`<div><div class="sec">客層喜歡什麼</div><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))">${TYPES.map(t=>`<div class="row"><span>${CT[t].icon} ${CT[t].label}</span><span class="chips">${CT[t].likes.map(l=>{const n=ls.filter(m=>m.tags.includes(l)).length;return`<span class="chip ${n>=2?'g':n?'':'r'}">${l} ${n}</span>`}).join('')}</span></div>`).join('')}</div></div>`;
   sheet('📜 菜單',h)}
+function recommendMenu(){
+  const L=LOCS[g.loc];const pool=MENU.filter(m=>!m.season&&m.L<=g.lantern);
+  const sc=m=>TYPES.reduce((s,t)=>s+L.mix[t]*(1+1.5*m.tags.filter(x=>CT[t].likes.includes(x)).length)*(priceOf(m.id)<=CT[t].pp*.55?1:.4),0)+(m.q-50)/20+(1-costOf(m.id)/priceOf(m.id))*2;
+  const cap=menuCap();const nd=Math.max(4,Math.round(cap*.35)),nf=cap-nd;
+  const food=pool.filter(m=>!isDrink(m)).sort((a,b)=>sc(b)-sc(a));const drinks=pool.filter(isDrink).sort((a,b)=>sc(b)-sc(a));
+  const pickF=food.slice(0,nf);for(const need of['〆','串燒'])if(!pickF.some(m=>m.cat===need)){const x=food.find(m=>m.cat===need);if(x){pickF.pop();pickF.push(x)}}
+  const pickD=drinks.slice(0,nd);if(!pickD.some(m=>m.cat==='飲料')){const x=drinks.find(m=>m.cat==='飲料');if(x){pickD.pop();pickD.push(x)}}
+  const on=new Set([...pickF,...pickD].map(m=>m.id));let added=0,removed=0;
+  for(const m of MENU){if(m.season)continue;const e=g.menu[m.id];const want=on.has(m.id);if(want&&!e.on){added++;if(!e.sold)e.sold=5}if(!want&&e.on)removed++;e.on=want}
+  return{added,removed}}
+function pruneMenu(){
+  const ls=listed().filter(m=>!m.season);const bad=ls.filter(m=>{const h=g.menu[m.id].hist||[];return h.length>=3&&h.slice(-3).every(x=>x<3)}).sort((a,b)=>(g.menu[a.id].hist||[]).reduce((x,y)=>x+y,0)-(g.menu[b.id].hist||[]).reduce((x,y)=>x+y,0));
+  const out=[];const maxN=Math.max(1,Math.floor(ls.length/3));for(const m of bad){if(out.length>=maxN)break;const rest=listed().filter(x=>x.id!==m.id);if(isDrink(m)&&!rest.some(isDrink))continue;if(!isDrink(m)&&rest.filter(x=>!isDrink(x)).length<4)continue;g.menu[m.id].on=false;out.push(m.n)}
+  return out}
 function viewShop(){
   const tab=ui.shopTab;
   const tabs=[['furn','桌椅'],['deco','擺飾'],['style','裝潢'],['equip','設備'],['kitchen','廚房']];
@@ -1746,7 +1865,7 @@ function viewShop(){
     for(const grp of Object.keys(STYLES)){h+=`<div class="sec">${nm[grp]}</div><div class="grid">`+Object.entries(STYLES[grp]).map(([k,s])=>{const cur=g.styles[grp]===k;const owned=(g.owned||{})[grp+':'+k]||s.cost===0;return`<div class="card ${cur?'sel':''}"><h3>${s.label}</h3><div>環境 +${s.env}</div><div class="row"><b class="num">${owned?'已擁有':fmt(s.cost)}</b>${s.L>g.lantern?`<span class="chip r">${lockTxt(s.L)}</span>`:''}</div><button class="btn small ${cur?'on':'primary'}" data-style="${grp}:${k}" ${cur||s.L>g.lantern||(!owned&&s.cost>g.cash)?'disabled':''}>${cur?'使用中':owned?'換上':'購買並換上'}</button></div>`}).join('')+'</div>'}
   }
   if(tab==='equip'){h+='<div class="grid">'+Object.entries(EQUIP).map(([k,e])=>g.equip[k]?`<div class="card sel"><h3>${e.label}</h3><div>${e.desc}</div><span class="chip g">已安裝</span></div>`:card(e.label,e.desc,e.cost,`data-buy="equip:${k}"`,e.L>g.lantern?lockTxt(e.L):'','')).join('')+'</div>'}
-  if(tab==='kitchen'){h+='<div class="grid">'+KITCHEN.map((k,i)=>i<=g.kitchen?`<div class="card ${i===g.kitchen?'sel':''}"><h3>${k.label}</h3><div>可容納 ${k.cap} 位料理人</div><span class="chip g">${i===g.kitchen?'目前':'已升級'}</span></div>`:card(k.label,`可容納 ${k.cap} 位料理人`,k.cost,`data-buy="kitchen:${i}"`,k.L>g.lantern?lockTxt(k.L):(i>g.kitchen+1?'先升級前一級':''),'')).join('')+'</div>'}
+  if(tab==='kitchen'){h+='<div class="grid">'+KITCHEN.map((k,i)=>i<=g.kitchen?`<div class="card ${i===g.kitchen?'sel':''}"><h3>${k.label}</h3><div>可容納 ${k.cap} 位料理人${i?`・菜單上限 +${i*3} 道`:''}</div><span class="chip g">${i===g.kitchen?'目前':'已升級'}</span></div>`:card(k.label,`可容納 ${k.cap} 位料理人・菜單上限 +${i*3} 道`,k.cost,`data-buy="kitchen:${i}"`,k.L>g.lantern?lockTxt(k.L):(i>g.kitchen+1?'先升級前一級':''),'')).join('')+'</div>'}
   sheet('🛒 商店',h)}
 function viewPromo(){
   const active=g.promos.filter(p=>p.until>=g.day);
@@ -1786,6 +1905,8 @@ function viewHelp(){
   <div><div class="sec">提燈評鑑</div><p style="margin:4px 0">前一天的數字達到條件，評鑑員隔天就會扮成獨自用餐的客人來店（第一盞燈要滿意度 80、第二盞 83、第三盞 87）。拿到燈可以上架更多菜、請更多外場、買更高級的裝潢。條件在「📊 店舖資料」。</p></div>
   <div><div class="sec">錢</div><p style="margin:4px 0">每天要付租金、薪水、水電瓦斯和食材。資金連續 3 晚打烊後都是負的，店就收了。起步時少請人、少買東西，先把口碑做起來。</p></div>
   <div><div class="sec">快捷鍵</div><p style="margin:4px 0">空白鍵：暫停／繼續。1、2、4、8：切換速度。Esc：關閉視窗。擺設模式按 R 轉向。</p></div>
+  <div><div class="sec">打掃</div><p style="margin:4px 0">客人越多廁所越髒，太髒客人會抱怨、衛生稽查也會扣分；客人離開後地上會有灑出的酒和菜渣。外場有空時會自己去洗廁所、掃地，打烊後也要把店裡收拾乾淨才算收工。收回廚房的碗盤，料理人有空時會去洗。</p></div>
+  <div><div class="sec">菜單上限與套餐</div><p style="margin:4px 0">菜單上限看燈數，升級廚房每級 +3 道、買「今日推薦黑板」+2 道。菜單裡會顯示每道菜昨天賣幾份、丟掉幾份和毛利排名，也有「下架賣不好的」「依客層推薦上架」可以一鍵整理。「🍶 套餐」分頁可以開放飲み放題和宴會套餐：客人付固定價錢，喝得多、店裡也更忙。</p></div>
   <div><div class="sec">二號店</div><p style="margin:4px 0">拿到三盞燈後，可以在「🏬 分店」花 $500,000 到另一個地點開二號店。兩家店共用資金，每天一起開店、一起結算；畫面上方可以切換要看哪一家，員工也能互相調派。</p></div>
   <div><div class="sec">成就與月度挑戰</div><p style="margin:4px 0">「🏅 成就」裡有銅、銀、金三級獎牌，還有每個月隨機出的 3 個挑戰，達成可以拿獎金。</p></div>
   <div><div class="sec">季節活動</div><p style="margin:4px 0">尾牙季（12/15–1/25）、跨年（12/28–1/3）、櫻花季（3/15–4/15）、夏日祭（7/10–8/31）會有限定菜和店內裝飾，人潮也會跟著變。限定菜自動上架、不佔菜單名額，活動結束就下架。</p></div>
@@ -1924,6 +2045,11 @@ const ACT={
   toTitleSave:()=>{if(!busyDay())save();RT=RT.map(()=>null);rt=null;openView('title')},
   wipe:()=>{if(!ui.confirmWipe){ui.confirmWipe=true;renderView();return}ui.confirmWipe=false;try{localStorage.removeItem('izakaya-tw-v1')}catch(e){}RT=RT.map(()=>null);rt=null;openView('title')},
   payoff:()=>{const n=g.loans.reduce((s,l)=>s+l.principalLeft(),0);if(spend(n)){g.loans=[];toast('借款已還清');renderView();renderAll()}},
+  toggleNomi:()=>{g.nomi.on=!g.nomi.on;save();renderView()},
+  toggleCourse:()=>{g.course.on=!g.course.on;save();renderView()},
+  menuResetPrice:()=>{for(const m of MENU)g.menu[m.id].pm=1;toast('全部價錢回到標準價');renderView()},
+  menuPrune:()=>{const out=pruneMenu();toast(out.length?`下架了 ${out.length} 道：${out.join('、')}`:'目前沒有連續 3 天都賣不到 3 份的菜');renderView();renderAll()},
+  menuRecommend:()=>{if(!ui.confirmRec){ui.confirmRec=true;renderView();return}ui.confirmRec=false;const r=recommendMenu();toast(`已依客層重排：新上架 ${r.added} 道、下架 ${r.removed} 道`);renderView();renderAll()},
   doRename:()=>{g.name=$('#rName').value.trim()||g.name;save();closeView()},
 };
 function ghostLayout(x,y,kind,rot){
@@ -1961,7 +2087,8 @@ document.addEventListener('click',e=>{
   if(d.fire){const id=+d.fire;if(ui.confirmFire!==id){ui.confirmFire=id;renderView();return}ui.confirmFire=null;const s=g.staff.find(x=>x.id===id);if(s&&s.key)g.usedChars[s.key]=g.day+10;g.staff=g.staff.filter(x=>x.id!==id);renderView();renderAll();return}
   if(d.bonus){const s=g.staff.find(x=>x.id===+d.bonus);if(s&&spend(2000)){s.mood=clamp(s.mood+25,0,100);s.bonusDay=g.day;toast(`${s.name} 很開心（心情 ${s.mood}）`);renderView();renderAll()}return}
   if(d.raise){const s=g.staff.find(x=>x.id===+d.raise);if(s){s.wage+=20;s.mood=clamp(s.mood+12,0,100);toast(`${s.name} 時薪調到 $${s.wage}`);renderView();renderAll()}return}
-  if(d.mtab){ui.menuTab=d.mtab;renderView();return}
+  if(d.mtab){ui.menuTab=d.mtab;ui.confirmRec=false;renderView();return}
+  if(d.cprice){const[k,dl]=d.cprice.split(':');const o=g[k];const lim=k==='nomi'?[390,1290]:[890,2980];o.price=clamp(o.price+ +dl,lim[0],lim[1]);save();renderView();return}
   if(d.pm){const[id,dir]=d.pm.split(':');const e=g.menu[id];e.pm=clamp(Math.round((e.pm+ +dir*.1)*10)/10,.7,1.5);renderView();return}
   if(d.on){const e=g.menu[d.on];if(!e.on&&!MI[d.on].season&&regularCount()>=menuCap()){toast(`菜單最多 ${menuCap()} 道`);return}e.on=!e.on;if(e.on&&!e.sold)e.sold=5;renderView();renderAll();return}
   if(d.auto){const e=g.menu[d.auto];e.auto=!e.auto;if(!e.auto)e.qty=Math.max(5,Math.ceil(e.sold*1.2/5)*5);renderView();return}
