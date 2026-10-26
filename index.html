@@ -171,7 +171,7 @@ label.f input:not([type=range]),label.f select{font:inherit;padding:8px 10px;bor
 
 <script>
 'use strict';
-const APP_VER='2026-10-26k';
+const APP_VER='2026-10-27a';
 // 店主模式：網頁版（github.io）上只有輸入密碼的電腦看得到設定類選單；claude.ai 版一律視為店主
 const ONLINE=/github\.io$/.test(location.hostname);
 const OWNER_HASH='ed77e1a0f2358e25e8d7d31e7e7e33639d0a0468a3f62875b695d5e6438763a1';
@@ -572,8 +572,33 @@ function makeShop(o){
 function newGame(o,doSave=true){
   S={v:2,day:1,cash:200000,loans:[],negDays:0,totalGuests:0,totalRevenue:0,ach:{},best:{},seasonSold:{},chDone:0,month:null,noAngryRun:0,cur:0,shops:[makeShop(o)]};
   activate(S);if(doSave)save()}
-function save(){try{if(S)localStorage.setItem('izakaya-tw-v1',JSON.stringify(S))}catch(e){}}
-function load(){try{const s=localStorage.getItem('izakaya-tw-v1');if(!s)return null;return normalizeSave(JSON.parse(s))}catch(e){return null}}
+// ================= 存檔欄位與雲端同步 =================
+let SLOT=1;try{SLOT=clamp(+localStorage.getItem('izakaya-slot')||1,1,3)}catch(e){}
+const slotKey=n=>n===1?'izakaya-tw-v1':'izakaya-tw-v1-s'+n;
+function setSlot(n){SLOT=n;try{localStorage.setItem('izakaya-slot',String(n))}catch(e){}}
+function save(){if(!S)return;S.savedAt=Date.now();try{localStorage.setItem(slotKey(SLOT),JSON.stringify(S))}catch(e){}schedulePush()}
+function load(n){try{const s=localStorage.getItem(slotKey(n||SLOT));if(!s)return null;return normalizeSave(JSON.parse(s))}catch(e){return null}}
+const SYNC_URL='https://izakaya-sync.a0911297519.workers.dev';
+const syncCode=n=>{try{return localStorage.getItem('izakaya-sync-'+(n||SLOT))||''}catch(e){return''}};
+function setSyncCode(c,n){try{c?localStorage.setItem('izakaya-sync-'+(n||SLOT),c):localStorage.removeItem('izakaya-sync-'+(n||SLOT))}catch(e){}}
+function newSyncCode(){const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';const r=crypto.getRandomValues(new Uint8Array(16));let s='';for(const x of r)s+=a[x%a.length];return s}
+const fmtCode=c=>c.replace(/(.{4})(?=.)/g,'$1-');
+const cleanCode=c=>String(c||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+async function cloudGet(code){const r=await fetch(SYNC_URL+'/save/'+code+'?t='+Date.now(),{cache:'no-store'});if(r.status===404)return null;if(!r.ok)throw new Error('http '+r.status);return r.json()}
+async function cloudPut(code,S0){const r=await fetch(SYNC_URL+'/save/'+code,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({save:S0,savedAt:S0.savedAt||Date.now()})});if(!r.ok)throw new Error('http '+r.status)}
+const sync={state:'',last:0,busy:false};let pushTimer=null;
+function schedulePush(){if(!syncCode())return;clearTimeout(pushTimer);pushTimer=setTimeout(pushNow,3000)}
+async function pushNow(){clearTimeout(pushTimer);pushTimer=null;const c=syncCode();if(!c||!S||busyDay())return;
+  try{await cloudPut(c,S);sync.state='ok';sync.last=Date.now()}catch(e){sync.state='err'}if(g)renderTop()}
+async function pullCheck(){const c=syncCode();if(!c||busyDay()||sync.busy)return;sync.busy=true;
+  try{const o=await cloudGet(c);if(o&&o.save){const remote=o.savedAt||0,local=(S&&S.savedAt)||0;
+      if(remote>local+1000&&!busyDay()){const N=normalizeSave(o.save);if(N){N.savedAt=remote;activate(N);try{localStorage.setItem(slotKey(SLOT),JSON.stringify(S))}catch(e){}renderAll();if(ui.view==='title'||ui.view==='transfer')renderView();toast(`☁️ 已載入雲端上比較新的進度：「${g.name}」第 ${S.day} 天`)}}
+      else if(local>remote+1000)await pushNow()}
+    else if(o===null&&S)await pushNow();
+    sync.state='ok';sync.last=Date.now()}catch(e){sync.state='err'}
+  sync.busy=false;if(g)renderTop()}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pullCheck();else if(pushTimer)pushNow()});
+
 const BRANCH_COST=500000;
 // 一天開始：每家店各自開店；條件不足的店今天公休
 function startAllDays(){
@@ -605,7 +630,7 @@ function endOfDayAll(){
   tot.medals=checkAch();
   ui.dayTotal=tot;
   RT=S.shops.map(()=>null);setCtx(S.cur);
-  save();ui.paused=false;
+  save();pushNow();ui.paused=false;
   if(S.negDays>=3){openView('over');return}
   ui.repIdx=S.cur;openView('report');
 }
@@ -1761,7 +1786,7 @@ function renderTop(){
   const lan='🏮'.repeat(g.lantern)+'◌'.repeat(3-g.lantern);
   $('#stats').innerHTML=`<span>第 <b>${g.day}</b> 天 ${dateStr(g.day)}</span><span>資金 <b class="num">${fmt(g.cash)}</b></span>`+
    (rt?`<span>今日來客 <b class="num">${rt.served}</b> 人</span><span>營業額 <b class="num">${fmt(rt.rev)}</b></span><span>滿意度 <b class="num">${sat==null?'—':sat}</b></span>`:'')+
-   `<span title="提燈評鑑">評鑑 <b>${lan}</b></span><span>知名度 <b class="num">${Math.round(noticeProb()*100)}%</b></span>`;
+   `${syncCode()?`<span title="雲端同步">${sync.state==='err'?'☁️ <b class="bad">同步失敗</b>':sync.last?'☁️ 已同步':'☁️ 同步中'}</span>`:''}<span title="提燈評鑑">評鑑 <b>${lan}</b></span><span>知名度 <b class="num">${Math.round(noticeProb()*100)}%</b></span>`;
   document.querySelectorAll('#nav button').forEach(b=>{const n=b.dataset.nav;b.disabled=busyDay()&&['edit','shop','promo','loan','staff'].includes(n)});
 }
 function renderBanner(){
@@ -1868,12 +1893,13 @@ function renderView(){
   if(v==='ach')return viewAch();
 }
 function viewTitle(){
-  const s=sumOf(load());
+  const slots=[1,2,3].map(n=>({n,s:sumOf(load(n)),c:!!syncCode(n)}));
   sheet('🏮 我的居酒屋',`<div class="big">在台北開一間居酒屋</div>
   <p style="margin:0;font-size:17px">你是老闆。你不會直接指揮員工，而是決定要請誰、賣什麼、價錢多少、桌子怎麼擺，然後拉開暖簾開店，看看哪裡卡住了再調整。目標是拿到「提燈評鑑」三盞燈。</p>
-  <p style="margin:0" class="muted">營業時間預設 17:00 到 24:00。串燒、生魚片、炸物、生啤酒、清酒……客人會一輪一輪追加，飲料賣得好才賺得到錢。</p>
-  ${s?`<div class="notice"><b>存檔：</b>「${esc(s.name)}」第 ${s.day} 天・${'🏮'.repeat(s.lantern)||'未獲燈'}・資金 ${fmt(s.cash)}</div>`:''}`,
-  `${s?'<button class="btn primary" data-act="continue">繼續營業</button>':''}<button class="btn ${s?'':'primary'}" data-act="toNew">開新店</button><span class="muted" style="margin-right:auto;align-self:center">版本 ${APP_VER}</span>${isOwner()?'<button class="btn" data-act="toTransfer">📥 匯入舊存檔</button>':'<button class="btn" data-act="ownerOpen" title="店主登入" aria-label="店主登入">🔑</button>'}<button class="btn" data-act="help">遊戲說明</button>`,false)}
+  <div class="sec">選一個存檔</div>
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">${slots.map(x=>`<div class="card ${x.n===SLOT?'sel':''}"><h3>存檔 ${x.n}${x.c?' ☁️':''}</h3>${x.s?`<div><b>「${esc(x.s.name)}」</b></div><div>第 ${x.s.day} 天・${'🏮'.repeat(x.s.lantern)||'未獲燈'}</div><div class="num">資金 ${fmt(x.s.cash)}</div><div class="bar"><button class="btn small primary" data-slotgo="${x.n}">繼續營業</button><button class="btn small" data-slotnew="${x.n}">開新店</button></div>`:`<div class="muted">還沒有店</div><div class="bar"><button class="btn small primary" data-slotnew="${x.n}">在這裡開新店</button></div>`}</div>`).join('')}</div>
+  <div class="muted">每個存檔各是一家店，可以給家裡不同的人用。☁️ 代表這個存檔有開雲端同步。</div>`,
+  `<span class="muted" style="margin-right:auto;align-self:center">版本 ${APP_VER}</span>${isOwner()?'<button class="btn" data-act="toTransfer">📦 轉移與同步</button>':'<button class="btn" data-act="ownerOpen" title="店主登入" aria-label="店主登入">🔑</button>'}<button class="btn" data-act="help">遊戲說明</button>`,false)}
 let newOpt={name:'合',owner:'',loc:'songshan'};
 function viewNew(){
   sheet('開新店',`<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">
@@ -1882,7 +1908,7 @@ function viewNew(){
    <div class="sec">選地點</div>
    <div class="grid">${Object.entries(LOCS).map(([k,L])=>`<button class="opt ${newOpt.loc===k?'sel':''}" data-loc="${k}"><b>${L.label}</b><br>每天租金 ${fmt(L.rent)}<br><span>${L.desc}</span></button>`).join('')}</div>
    <div class="notice">起始資金 <b>$200,000</b>。附送四張桌子和六個吧台座位，但沒有員工，要自己請。新店還沒有名氣，頭一兩個星期賠錢很正常；錢不夠可以到「🏦 借貸」。</div>
-   ${load()?'<div class="notice warn">開新店會蓋掉現有的存檔。</div>':''}`,
+   ${load()?`<div class="notice warn">開新店會蓋掉「存檔 ${SLOT}」裡的店。</div>`:''}`,
   `<button class="btn" data-act="toTitle">返回</button><button class="btn primary" data-act="createGame">拉開暖簾</button>`,false)}
 function viewBrief(){
   const ev=g.today.events;
@@ -2104,8 +2130,18 @@ async function decodeSave(code){code=code.replace(/\s+/g,'');
   if(code.startsWith('IZK0:'))return JSON.parse(decodeURIComponent(escape(atob(code.slice(5)))));
   throw new Error('bad')}
 function viewTransfer(){
-  const s=sumOf(load());
-  sheet('📦 轉移存檔',`<div>存檔只放在各自的瀏覽器裡。要把進度搬到別的地方（例如從 claude.ai 搬到網頁版、換電腦或手機），先在原本玩的地方匯出，再到新的地方匯入。</div>
+  const s=sumOf(load());const code=syncCode();
+  const syncHtml=`<div class="notice"><h4>☁️ 自動同步（存檔 ${SLOT}）</h4>${code?`
+    <div>這個存檔已經開啟同步。在另一台裝置的「📦 轉移與同步」輸入下面這組同步碼，兩台就會共用同一家店的進度。</div>
+    <div class="big num" style="font-size:26px;letter-spacing:.08em;user-select:all">${fmtCode(code)}</div>
+    <div>${sync.state==='err'?'<b class="bad">上次同步失敗，請檢查網路。</b>':sync.last?`上次同步：${new Date(sync.last).toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})}`:'還沒同步過'}</div>
+    <div class="bar"><button class="btn small primary" data-act="syncNow">立即同步</button><button class="btn small" data-act="copyCode">複製同步碼</button><button class="btn small" data-act="syncOff">${ui.confirmSyncOff?'確定這台不再同步？再按一次':'這台停止同步'}</button></div>`:`
+    <div>開了同步之後，每晚打烊和每次存檔都會自動上傳；打開遊戲時會自動抓最新的進度。Mac 和手機就能接著玩同一家店。</div>
+    <div class="bar"><button class="btn small primary" data-act="syncOn" ${s?'':'disabled'}>在這台開啟同步</button></div>
+    <label class="f" for="syncIn">已經在別台開過？輸入同步碼<input id="syncIn" placeholder="例如 ABCD-EFGH-JKLM-NPQR" value="${esc(ui.syncIn||'')}"></label>
+    <div class="bar"><button class="btn small" data-act="syncJoin">${ui.confirmJoin?'確定用雲端的進度蓋掉這台？再按一次':'連上同步'}</button></div>`}
+    ${ui.syncMsg?`<div><b>${ui.syncMsg}</b></div>`:''}</div>`;
+  sheet('📦 轉移與同步',syncHtml+`<div>存檔只放在各自的瀏覽器裡。要把進度搬到別的地方（例如從 claude.ai 搬到網頁版、換電腦或手機），先在原本玩的地方匯出，再到新的地方匯入。</div>
   <div class="sec">① 在原本玩的地方：匯出</div>
   ${s?`<div>這裡的存檔：<b>「${esc(s.name)}」第 ${s.day} 天</b>・${'🏮'.repeat(s.lantern)||'未獲燈'}・資金 ${fmt(s.cash)}</div>
   <div class="bar"><button class="btn primary" data-act="exportSave">產生存檔碼並複製</button></div>
@@ -2187,10 +2223,23 @@ const ACT={
   ownerLogin:async()=>{const v=($('#ownerPw')||{}).value||'';let h='';try{h=await sha256(v.trim())}catch(e){}
     if(h===OWNER_HASH){try{localStorage.setItem('izakaya-owner',OWNER_HASH)}catch(e){}ui.ownerMsg='';try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}openView('title');renderAll();toast('🔑 已登入店主模式，這台電腦可以使用所有設定')}
     else{ui.ownerMsg='密碼不對，請再試一次。';renderView()}},
+  syncOn:async()=>{if(busyDay()){ui.syncMsg='營業中不能設定同步，請打烊後再試。';renderView();return}if(!S){ui.syncMsg='這個存檔還沒有店。';renderView();return}
+    const c=newSyncCode();setSyncCode(c);save();try{await pushNow();ui.syncMsg=sync.state==='ok'?'同步已開啟，記下同步碼，到另一台裝置輸入就好。':'同步碼建好了，但上傳失敗，請檢查網路後按「立即同步」。'}catch(e){}renderView()},
+  syncNow:async()=>{ui.syncMsg='同步中…';renderView();await pullCheck();ui.syncMsg=sync.state==='ok'?'已同步。':'同步失敗，請檢查網路。';renderView()},
+  copyCode:async()=>{try{await navigator.clipboard.writeText(fmtCode(syncCode()));ui.syncMsg='已複製同步碼。'}catch(e){ui.syncMsg='沒辦法自動複製，請直接選取上面的同步碼。'}renderView()},
+  syncOff:()=>{if(!ui.confirmSyncOff){ui.confirmSyncOff=true;renderView();return}ui.confirmSyncOff=false;setSyncCode('');ui.syncMsg='這台已停止同步，雲端上的進度還在，之後可以再輸入同步碼連回來。';renderView();renderAll()},
+  syncJoin:async()=>{if(busyDay()){ui.syncMsg='營業中不能設定同步，請打烊後再試。';renderView();return}
+    const c=cleanCode(ui.syncIn);if(c.length<16){ui.syncMsg='同步碼是 16 個英文字母和數字，請再確認一次。';ui.confirmJoin=false;renderView();return}
+    let o;try{o=await cloudGet(c)}catch(e){ui.syncMsg='連不上同步伺服器，請檢查網路。';renderView();return}
+    if(!o||!o.save){ui.syncMsg='找不到這組同步碼，請再確認一次。';ui.confirmJoin=false;renderView();return}
+    const N=normalizeSave(o.save);if(!N){ui.syncMsg='雲端上的存檔讀不出來。';renderView();return}
+    if(load()&&!ui.confirmJoin){const r=sumOf(N);ui.confirmJoin=true;ui.syncMsg=`雲端上是「${esc(r.name)}」第 ${r.day} 天。連上後會蓋掉這台「存檔 ${SLOT}」原本的店。`;renderView();return}
+    ui.confirmJoin=false;N.savedAt=o.savedAt||Date.now();setSyncCode(c);activate(N);try{localStorage.setItem(slotKey(SLOT),JSON.stringify(S))}catch(e){}sync.state='ok';sync.last=Date.now();ui.syncIn='';ui.syncMsg='';
+    ui.fromTitle=false;closeView();ui.tab='prep';renderAll();toast(`☁️ 已連上同步：「${g.name}」第 ${S.day} 天`)},
   ownerOpen:()=>{ui.ownerMsg='';openView('owner')},
   ownerLogout:()=>{try{localStorage.removeItem('izakaya-owner')}catch(e){}closeView();renderAll();toast('🔒 已登出店主模式')},
   close:()=>{if(ui.view==='transfer'&&ui.fromTitle){ui.fromTitle=false;openView('title');return}closeView()},
-  toTransfer:()=>{ui.fromTitle=ui.view==='title';ui.expCode='';ui.impMsg='';ui.confirmImport=false;openView('transfer')},
+  toTransfer:()=>{ui.fromTitle=ui.view==='title';ui.expCode='';ui.impMsg='';ui.confirmImport=false;ui.syncMsg='';ui.confirmJoin=false;ui.confirmSyncOff=false;openView('transfer')},
   exportSave:async()=>{const s=load();if(!s){ui.impMsg='這裡還沒有存檔可以匯出。';renderView();return}
     ui.expCode=await encodeSave(s);let ok=false;try{await navigator.clipboard.writeText(ui.expCode);ok=true}catch(e){}
     ui.expMsg=ok?`已複製存檔碼（${Math.ceil(ui.expCode.length/1024)} KB）。到網頁版「📥 匯入舊存檔」貼上就好。`:'瀏覽器不讓我自動複製：請點下面的框框，全選（Cmd+A）後複製（Cmd+C）。';
@@ -2204,7 +2253,7 @@ const ACT={
     ui.confirmImport=false;ui.impCode='';ui.fromTitle=false;closeView();ui.tab='prep';renderAll();toast(`📦 已匯入「${g.name}」第 ${g.day} 天，資金 ${fmt(g.cash)}`)},
   continue:()=>{activate(load());closeView()},
   toNew:()=>openView('new'),toTitle:()=>openView('title'),help:()=>openView('help'),
-  createGame:()=>{newOpt.name=$('#nName').value.trim()||'合';newOpt.owner=$('#nOwner').value.trim();newGame(newOpt);rebuildMap();ui.tab='prep';closeView();openView('help')},
+  createGame:()=>{newOpt.name=$('#nName').value.trim()||'合';newOpt.owner=$('#nOwner').value.trim();setSyncCode('');newGame(newOpt);rebuildMap();ui.tab='prep';closeView();openView('help')},
   startDay:()=>{if(openProblems().length){toast('還不能開店');return}ui.edit=false;ui.sel=null;startAllDays();if(!busyDay())return;ui.tab='board';ui.paused=false;ui.pausedBefore=false;$('#modal').hidden=true;ui.view=null;renderAll()},
   openDay:()=>{if(ui.edit)return;openView('brief')},
   afterReport:()=>{ui.tab='prep';closeView();const e=S.shops.find(x=>x.lantern===3&&!x.ended);if(e){e.ended=true;ui.endShop=e;save();openView('ending')}},
@@ -2223,7 +2272,7 @@ const ACT={
   tut:()=>{g.tutorial=!g.tutorial;renderView();renderAll()},
   saveNow:()=>{if(busyDay())return;save();toast('已存檔')},
   toTitleSave:()=>{if(!busyDay())save();RT=RT.map(()=>null);rt=null;openView('title')},
-  wipe:()=>{if(!ui.confirmWipe){ui.confirmWipe=true;renderView();return}ui.confirmWipe=false;try{localStorage.removeItem('izakaya-tw-v1')}catch(e){}RT=RT.map(()=>null);rt=null;openView('title')},
+  wipe:()=>{if(!ui.confirmWipe){ui.confirmWipe=true;renderView();return}ui.confirmWipe=false;try{localStorage.removeItem(slotKey(SLOT))}catch(e){}setSyncCode('');RT=RT.map(()=>null);rt=null;openView('title')},
   payoff:()=>{const n=g.loans.reduce((s,l)=>s+l.principalLeft(),0);if(spend(n)){g.loans=[];toast('借款已還清');renderView();renderAll()}},
   toggleNomi:()=>{g.nomi.on=!g.nomi.on;save();renderView()},
   toggleCourse:()=>{g.course.on=!g.course.on;save();renderView()},
@@ -2245,6 +2294,8 @@ document.addEventListener('click',e=>{
     if(n==='transfer'){ACT.toTransfer();return}
     ui.pausedBefore=ui.paused;if(n==='staff')ui.arg='list';openView(n,n==='staff'?'list':undefined);return}
   if(d.tab){ui.tab=d.tab;renderSide();return}
+  if(d.slotgo){const n=+d.slotgo;const sv=load(n);if(!sv)return;setSlot(n);activate(sv);sync.state='';sync.last=0;closeView();pullCheck();return}
+  if(d.slotnew){setSlot(+d.slotnew);openView('new');return}
   if(d.shop!=null){if(ui.edit){toast('請先按「完成擺設」');return}S.cur=+d.shop;setCtx(S.cur);ui.sel=null;ui.tab=rt?'board':'prep';renderAll();return}
   if(d.rep!=null){ui.repIdx=+d.rep;renderView();return}
   if(d.brloc){ui.brName=(($('#brName')||{}).value||'');ui.brLoc=d.brloc;renderView();return}
@@ -2308,7 +2359,7 @@ cv.addEventListener('click',e=>{
       if(p.seat)for(const s of p.seat){const d2=Math.hypot(s.cx-t.fx,s.cy-t.fy);if(d2<bd){bd=d2;best=p}}}
     if(best){ui.pausedBefore=ui.paused;openView('party',best)}}
 });
-document.addEventListener('input',e=>{if(e.target.id==='impCode'){ui.impCode=e.target.value;if(ui.confirmImport){ui.confirmImport=false;ui.impMsg=''}return}const k=e.target.dataset&&e.target.dataset.vol;if(!k)return;AUD[k]=+e.target.value;if(MG)MG.gain.value=AUD.musicVol*.6;if(SG)SG.gain.value=AUD.sfxVol;saveAud()});
+document.addEventListener('input',e=>{if(e.target.id==='syncIn'){ui.syncIn=e.target.value;if(ui.confirmJoin){ui.confirmJoin=false;ui.syncMsg=''}return}if(e.target.id==='impCode'){ui.impCode=e.target.value;if(ui.confirmImport){ui.confirmImport=false;ui.impMsg=''}return}const k=e.target.dataset&&e.target.dataset.vol;if(!k)return;AUD[k]=+e.target.value;if(MG)MG.gain.value=AUD.musicVol*.6;if(SG)SG.gain.value=AUD.sfxVol;saveAud()});
 document.addEventListener('keydown',e=>{
   if(e.target.id==='ownerPw'&&e.key==='Enter'){ACT.ownerLogin();return}
   if(e.target.tagName==='INPUT')return;
@@ -2334,7 +2385,7 @@ function loop(now){
 function boot(){
   sizeCanvas();window.addEventListener('resize',sizeCanvas);
   const s=load();
-  if(s){activate(s);renderAll();openView('title')}
+  if(s){activate(s);renderAll();openView('title');pullCheck()}
   else{newGame({name:'合',owner:'',loc:'songshan'},false);rebuildMap();renderAll();openView('title')}
   if(location.hash==='#admin'){ui.ownerMsg='';openView('owner')}
   window.addEventListener('hashchange',()=>{if(location.hash==='#admin'){ui.ownerMsg='';openView('owner')}});
