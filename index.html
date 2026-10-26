@@ -171,7 +171,7 @@ label.f input:not([type=range]),label.f select{font:inherit;padding:8px 10px;bor
 
 <script>
 'use strict';
-const APP_VER='2026-10-26h';
+const APP_VER='2026-10-26j';
 // 店主模式：網頁版（github.io）上只有輸入密碼的電腦看得到設定類選單；claude.ai 版一律視為店主
 const ONLINE=/github\.io$/.test(location.hostname);
 const OWNER_HASH='ed77e1a0f2358e25e8d7d31e7e7e33639d0a0468a3f62875b695d5e6438763a1';
@@ -350,6 +350,15 @@ const FURN={
   tank:{label:'活魚水族箱',w:2,h:1,cap:0,cost:30000,env:8,max:1,L:1,desc:'現撈的魚在裡面游，生魚片更好賣，環境 +8。'},
   ishidoro:{label:'石燈籠',w:1,h:1,cap:0,cost:15000,env:6,max:1,L:2,desc:'庭園用的石燈籠，環境 +6。'},
   koi:{label:'錦鯉小池',w:2,h:2,cap:0,cost:80000,env:18,max:1,L:3,desc:'店中央的錦鯉池，三盞燈名店的門面，環境 +18。'},
+  kasa:{label:'紅紙傘架',w:1,h:1,cap:0,cost:3000,env:3,max:2,L:0,desc:'插著和紙番傘的傘架，環境 +3（最多 2 個）。'},
+  bamboo:{label:'竹子盆栽',w:1,h:1,cap:0,cost:2000,env:2,max:3,L:0,desc:'清爽的觀音竹，環境 +2（最多 3 個）。'},
+  bigLantern:{label:'大型紅燈籠立架',w:1,h:1,cap:0,cost:7000,env:4,max:2,L:0,desc:'比人還高的紅燈籠，環境 +4（最多 2 個）。'},
+  komodaru:{label:'菰樽堆疊',w:1,h:1,cap:0,cost:14000,env:6,max:1,L:1,desc:'三個稻草酒樽疊在一起，環境 +6。'},
+  komainu:{label:'狛犬一對',w:1,h:1,cap:0,cost:12000,env:5,max:1,L:1,desc:'守護店門的石雕狛犬，環境 +5。'},
+  tsukubai:{label:'蹲踞水缽',w:1,h:1,cap:0,cost:18000,env:7,max:1,L:2,desc:'竹管滴水的石缽，聽得到水聲，環境 +7。'},
+  beerFridge:{label:'自助啤酒冰箱',w:1,h:1,cap:0,cost:16000,env:1,max:1,L:0,equip:true,desc:'客人點生啤、烏龍茶、彈珠汽水時，約三成會自己去冰箱拿，吧台不用做。'},
+  pachinko:{label:'彈珠台',w:1,h:1,cap:0,cost:22000,env:2,max:1,L:0,equip:true,desc:'排隊的客人可以邊玩邊等，耐心比較撐得住，每天還有一點機台收入。'},
+  claw:{label:'夾娃娃機',w:1,h:1,cap:0,cost:18000,env:2,max:1,L:0,equip:true,desc:'路過的人比較會注意到店，朋友、情侶和觀光客更願意進來，每天也有一點收入。'},
 };
 // 牆上裝飾（買了直接掛上去）
 const WALLDEC={
@@ -362,6 +371,10 @@ const WALLDEC={
   mask:{label:'狐狸面具',cost:4000,env:3,max:1,L:0},
   tanzaku:{label:'短冊手寫菜單',cost:3000,env:3,max:1,L:0},
   neon:{label:'復古霓虹招牌',cost:18000,env:6,max:1,L:1},
+  fan:{label:'和風扇子',cost:2000,env:2,max:2,L:0},
+  poster:{label:'復古啤酒海報',cost:4000,env:3,max:2,L:0},
+  koinobori:{label:'鯉魚旗',cost:3500,env:3,max:1,L:0},
+  clock:{label:'古董掛鐘',cost:6000,env:3,max:1,L:1},
 };
 const STYLES={
   floor:{concrete:{label:'水泥地',cost:0,env:0,L:0},wood:{label:'杉木地板',cost:22000,env:6,L:0},slate:{label:'黑石板',cost:48000,env:10,L:1},terrazzo:{label:'洗石子地板',cost:26000,env:7,L:0},checker:{label:'市松磁磚',cost:30000,env:8,L:0}},
@@ -401,6 +414,7 @@ const EQUIP={
   qr:{label:'QR 掃碼點餐',cost:20000,daily:300,L:1,desc:'約三成的點單由客人自己掃碼，不用叫外場。每日平台費 $300。'},
   pay:{label:'行動支付',cost:8000,daily:0,L:0,desc:'結帳快一倍，客人滿意度微升。收款付 1.5% 手續費。'},
   tv:{label:'運動轉播電視',cost:15000,daily:30,L:0,desc:'環境 +3。有棒球轉播的晚上，下班族會多很多。每日電費 $30。'},
+  reizo:{label:'營業用大冰箱',cost:30000,daily:40,L:0,desc:'放在廚房。當天沒賣完的料理有一半可以留到明天，丟掉的食材少很多。每日電費 $40。'},
   chalk:{label:'今日推薦黑板',cost:15000,daily:0,L:0,desc:'門口立一塊手寫黑板：菜單上限 +2 道。'},
 };
 const KITCHEN=[{cap:2,cost:0,L:0,label:'標準廚房'},{cap:3,cost:80000,L:1,label:'擴充廚房'},{cap:4,cost:160000,L:2,label:'大廚房'}];
@@ -629,6 +643,8 @@ function envParts(){
   const ratio=tiles/free;if(ratio>.42)p.crowd=-Math.round((ratio-.42)*90);
   return p;
 }
+const hasFurn=k=>g.layout.some(o=>o.kind===k);
+const SELF_DRINK=['nama','oolong','ramune','bigbeer'];
 const envScore=()=>{const p=envParts();return clamp(Object.values(p).reduce((a,b)=>a+b,0),0,100)};
 const priceOf=id=>Math.round(MI[id].p*g.menu[id].pm/10)*10;
 const listed=()=>MENU.filter(m=>g.menu[m.id]&&g.menu[m.id].on&&avail(m));
@@ -637,14 +653,14 @@ function costOf(id){let c=MI[id].c;if(g&&g.staff.some(s=>s.perk==='thrift'))c*=.
 
 function awareness(){const L=LOCS[g.loc];let s=0,w=0;for(const t of TYPES){s+=L.mix[t]*g.rep[t];w+=L.mix[t]}return s/w/5}
 function promoNotice(){let n=g.sign?PROMOS.sign.notice:0;for(const p of g.promos)if(g.day>=p.from&&g.day<=p.until)n+=PROMOS[p.id].notice;return n}
-function noticeProb(){let p=.12+awareness()*.45+promoNotice()+g.lantern*.06;if(g.day<=5)p+=.15;if(g.day<=g.buzzUntil)p+=.15;if(g.day<=g.viralUntil)p+=.15;if(g.day<=g.badUntil)p-=.1;return clamp(p,.05,.95)}
+function noticeProb(){let p=.12+awareness()*.45+promoNotice()+g.lantern*.06+(hasFurn('claw')?.03:0);if(g.day<=5)p+=.15;if(g.day<=g.buzzUntil)p+=.15;if(g.day<=g.viralUntil)p+=.15;if(g.day<=g.badUntil)p-=.1;return clamp(p,.05,.95)}
 function menuFit(t){const L=CT[t].likes,ls=listed();let s=0;for(const tag of L){const n=ls.filter(m=>m.tags.includes(tag)).length;s+=Math.min(n,3)/3}return s/L.length}
 function estSpend(t){const ls=listed(),food=ls.filter(m=>!isDrink(m)),dr=ls.filter(m=>m.cat==='酒');if(!food.length)return 9999;const c=CT[t];const sc=m=>m.tags.filter(x=>c.likes.includes(x)).length;const fs=[...food].sort((a,b)=>sc(b)-sc(a)).slice(0,4);const fa=fs.reduce((s,m)=>s+priceOf(m.id),0)/fs.length;const da=dr.length?dr.reduce((s,m)=>s+priceOf(m.id),0)/dr.length:0;return fa*1.7+da*1.8*c.drink}
 function enterProb(t,qlen){
   const c=CT[t];const parts={};
   parts.rep=(g.rep[t]-1.5)*.06;
   const r=estSpend(t)/c.pp;parts.price=r>1?-(r-1)*.7:(1-r)*.12;
-  parts.menu=(menuFit(t)-.5)*.3+(g.nomi&&g.nomi.on&&(t==='friends'||t==='office')?.04:0)+(g.course&&g.course.on&&t==='office'?.02:0);
+  parts.menu=(menuFit(t)-.5)*.3+(hasFurn('claw')&&['friends','couple','tourist'].includes(t)?.03:0)+(g.nomi&&g.nomi.on&&(t==='friends'||t==='office')?.04:0)+(g.course&&g.course.on&&t==='office'?.02:0);
   parts.env=(envScore()-40)/100*.3*c.w.env;
   parts.queue=-qlen*.09;
   const p=clamp(.34+parts.rep+parts.price+parts.menu+parts.env+parts.queue+g.lantern*.05,.03,.92);
@@ -710,7 +726,7 @@ function startDay(){
   // 進貨
   for(const m of MENU){const e=g.menu[m.id];if(!e.on||!avail(m)){if(!isDrink(m)||!avail(m))e.stock=0;continue}
     const target=e.auto?(isDrink(m)?Math.max(20,Math.ceil(e.sold*1.3)+6):Math.max(6,Math.ceil(e.sold*1.2)+3)):e.qty;
-    const buy=Math.max(0,target-(isDrink(m)?e.stock:0));if(!isDrink(m))e.stock=0;e.stock+=buy;rt.stockCost+=buy*costOf(m.id);e.sold=0}
+    const keepS=isDrink(m)||g.equip.reizo;const buy=Math.max(0,target-(keepS?e.stock:0));if(!keepS)e.stock=0;e.stock+=buy;rt.stockCost+=buy*costOf(m.id);e.sold=0}
   g.cash-=rt.stockCost;
   // 員工
   const homes=[{x:6,y:7},{x:10,y:7},{x:12,y:4},{x:4,y:6},{x:13,y:7},{x:9,y:3}].filter(h=>!MAP.b[h.y*COLS+h.x]);
@@ -772,7 +788,7 @@ function updateParties(dt){
     const arrived=stepAgent(p,dt,sp);
     switch(p.state){
       case'walkIn':if(arrived){p.state='queue';p.since=rt.t;if(rt.parties.filter(x=>x.state==='queue').length===1)p.path=[{x:DOOR.x,y:DOOR.y}];chime();say('いらっしゃいませ')}break;
-      case'queue':{let d=3.2/c.pat*drainMul();if(hasPerk('greeter'))d*=.55;if(p.flags.booking)d*=.4;p.patience-=d*dt;if(p.patience<=0)angryLeave(p,'排隊等太久');break}
+      case'queue':{let d=3.2/c.pat*drainMul();if(hasFurn('pachinko'))d*=.75;if(hasPerk('greeter'))d*=.55;if(p.flags.booking)d*=.4;p.patience-=d*dt;if(p.patience<=0)angryLeave(p,'排隊等太久');break}
       case'toSeat':if(arrived){p.state='menu';p.menuUntil=rt.t+rnd(1.5,3);p.since=rt.t}break;
       case'menu':if(rt.t>=p.menuUntil){if(g.equip.qr&&p.round>0&&Math.random()<.35||g.equip.qr&&Math.random()<.3){placeOrder(p,null)}else{p.state='waitOrder';p.since=rt.t;addTask('order',{p})}}break;
       case'waitOrder':p.patience-=6/c.pat*drainMul()*dt;if(p.patience<=0)angryLeave(p,'沒人來點餐');break;
@@ -799,8 +815,9 @@ function placeOrder(p,waiter){
   if(!items.length){if(p.round===0){angryLeave(p,'想點的都賣完了');return}goPay(p);return}
   p.round++;p.orderAt=rt.t;p.state='dining';p.since=rt.t;
   if(waiter)p.svc.push(waiter.s.st.sv);
-  const food=items.filter(x=>!isDrink(MI[x.id])),drink=items.filter(x=>isDrink(MI[x.id]));
-  p.pending=0;p.gotDrink=!drink.length;
+  const food=items.filter(x=>!isDrink(MI[x.id]));let drink=items.filter(x=>isDrink(MI[x.id]));
+  let selfN=0;if(hasFurn('beerFridge'))drink=drink.filter(x=>{if(SELF_DRINK.includes(x.id)&&Math.random()<.35){const pr=x.incl?0:priceOf(x.id);for(let k=0;k<x.qty;k++)p.served.push({id:x.id,price:pr,q:55});if(x.incl)p.inclValue=(p.inclValue||0)+priceOf(x.id)*x.qty;selfN++;return false}return true});
+  p.pending=0;p.gotDrink=!drink.length||selfN>0;
   const mk=(st,list)=>{const tk={id:rt.kid++,p,station:st,items:list,status:'queued',created:rt.t};rt.tickets.push(tk);p.pending++;if(st==='b'&&!rt.bars.length)addTask('drink',{p,ticket:tk});return tk};
   if(drink.length)mk('b',drink);if(food.length)mk('k',food);
   for(const x of items){rt.sold[x.id]=(rt.sold[x.id]||0)+x.qty}
@@ -1029,12 +1046,14 @@ function tick(dt){
 function finishDay(){
   const hrs=g.hours.close-g.hours.open+1;
   for(const c of rt.chefs)rt.busy[c.s.id]=c.busy;for(const b of rt.bars)rt.busy[b.s.id]=b.busy;for(const w of rt.hall)rt.busy[w.s.id]=w.busy;
-  let waste=0;for(const m of MENU){const e=g.menu[m.id];e.sold=rt.sold[m.id]||0;e.waste=0;if(e.on&&avail(m))e.hist=(e.hist||[]).concat([e.sold]).slice(-7);if(!isDrink(m)&&e.stock>0){e.waste=e.stock;waste+=e.stock*costOf(m.id);e.stock=0}}
+  let waste=0;for(const m of MENU){const e=g.menu[m.id];e.sold=rt.sold[m.id]||0;e.waste=0;if(e.on&&avail(m))e.hist=(e.hist||[]).concat([e.sold]).slice(-7);if(!isDrink(m)&&e.stock>0){const keep=g.equip.reizo?Math.floor(e.stock*.5):0;e.waste=e.stock-keep;waste+=e.waste*costOf(m.id);e.stock=keep}}
   g.lastNomi=rt.nomiN;g.lastCourse=rt.courseN;
   const wages=g.staff.reduce((s,x)=>s+x.wage*hrs,0);
   const rent=LOCS[g.loc].rent;const util=900+120*hrs;
   let fees=Object.keys(g.equip).reduce((s,k)=>s+EQUIP[k].daily,0);
   g.cash-=wages+rent+util+fees;
+  let gameRev=0;if(hasFurn('pachinko'))gameRev+=Math.round(rt.served*rnd(8,14));if(hasFurn('claw'))gameRev+=Math.round(Object.values(rt.funnel).reduce((a,f)=>a+f.pass,0)*rnd(1.5,3));
+  rt.rev+=gameRev;g.cash+=gameRev;
   const cost={stock:rt.stockCost,wages,rent,util,fees:fees+rt.fees,fine:rt.fine};
   const profit=rt.rev-Object.values(cost).reduce((a,b)=>a+b,0);
   const avgSat=rt.sat.length?rt.sat.reduce((a,b)=>a+b,0)/rt.sat.length:0;
@@ -1075,7 +1094,7 @@ function finishDay(){
   g.inspectorDay=null;
   if(g.lantern<3&&g.day>=g.inspectWait&&lanternConds().every(c=>c.ok))g.inspectorDay=g.day+1;
   const idx=S.shops.indexOf(g);
-  ui.dayReports[idx]={rec,cost,profit,avgSat,funnel:rt.funnel,why:rt.why,complain:rt.complain,sold:rt.sold,waste,staffNotes,repBefore,lanternMsg,name:g.name,nomiN:rt.nomiN,courseN:rt.courseN,feeRev:rt.feeRev};
+  ui.dayReports[idx]={rec,cost,profit,avgSat,funnel:rt.funnel,why:rt.why,complain:rt.complain,sold:rt.sold,waste,staffNotes,repBefore,lanternMsg,name:g.name,nomiN:rt.nomiN,courseN:rt.courseN,feeRev:rt.feeRev,gameRev};
   if(g.nextHours){g.hours=g.nextHours;g.nextHours=null}
   ui.lastLogs[idx]=rt.log;RT[idx]=null;rt=null;
   if(!busyDay())endOfDayAll();
@@ -1289,6 +1308,10 @@ function draw(){
   if(g.wall.mask){const x=CW-WALLPX/2,y=OY+T*4.4;ctx.fillStyle='#fbf8f0';ctx.beginPath();ctx.ellipse(x,y,7,8,0,0,7);ctx.fill();ctx.beginPath();ctx.moveTo(x-7,y-3);ctx.lineTo(x-5,y-12);ctx.lineTo(x-2,y-6);ctx.moveTo(x+7,y-3);ctx.lineTo(x+5,y-12);ctx.lineTo(x+2,y-6);ctx.fill();ctx.strokeStyle='#c4271c';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x-5,y-1);ctx.lineTo(x-2,y);ctx.moveTo(x+5,y-1);ctx.lineTo(x+2,y);ctx.stroke();ctx.fillStyle='#c4271c';ctx.beginPath();ctx.arc(x,y+4,1.2,0,7);ctx.fill()}
   if(g.wall.tanzaku){for(let i=0;i<3;i++){ctx.fillStyle=['#f4efe2','#f2d36b','#e8a0a0'][i];ctx.fillRect(1+i*5,OY+T*7.6,4,28)}}
   if(g.wall.neon){const nx=PX(DOOR.x)+T*1.6,ny=OY+ROWS*T+WALLPX+6,fl=Math.sin(frameT*.31)>-.95?1:.3;ctx.save();ctx.shadowColor='rgba(255,90,170,.9)';ctx.shadowBlur=12*fl;ctx.strokeStyle=`rgba(255,120,190,${fl})`;ctx.lineWidth=2;rr(nx,ny,58,20,5);ctx.stroke();ctx.fillStyle=`rgba(255,160,210,${fl})`;ctx.font='900 12px "Noto Serif TC",serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('居酒屋',nx+29,ny+10.5);ctx.restore()}
+  for(let i=0;i<Math.min(g.wall.fan||0,2);i++){const x=CW-2,y=OY+T*(7.55+i*.7);ctx.save();ctx.translate(x,y);ctx.rotate(-Math.PI/2);ctx.fillStyle=i?'#2d4f8a':'#c4271c';ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,11,Math.PI*1.15,Math.PI*1.85);ctx.closePath();ctx.fill();ctx.strokeStyle='#f4efe2';ctx.lineWidth=.6;for(let k=0;k<5;k++){const a=Math.PI*(1.15+k*.175);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(a)*11,Math.sin(a)*11);ctx.stroke()}ctx.restore()}
+  for(let i=0;i<Math.min(g.wall.poster||0,2);i++){const x=1,y=OY+T*(.5+i*1.2);ctx.fillStyle='#f2e3c0';ctx.fillRect(x,y,14,22);ctx.fillStyle='#c4271c';ctx.fillRect(x+1,y+1,12,6);ctx.fillStyle='#e0a800';ctx.beginPath();ctx.arc(x+7,y+14,4,0,7);ctx.fill();ctx.fillStyle='#fff';ctx.fillRect(x+5,y+9,4,2)}
+  if(g.wall.koinobori){const sw=Math.sin(frameT*.08)*2;const fishes=[['#2d4f8a',0],['#c4271c',1]];for(const[c2,k]of fishes){const x=OX+T*.4+k*T*1.7,y=3+sw;ctx.fillStyle=c2;ctx.beginPath();ctx.moveTo(x,y+4);ctx.quadraticCurveTo(x+T*.8,y-3+sw,x+T*1.5,y+2);ctx.lineTo(x+T*1.3,y+5);ctx.lineTo(x+T*1.5,y+8);ctx.quadraticCurveTo(x+T*.8,y+11+sw,x,y+4);ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x+5,y+4,2,0,7);ctx.fill();ctx.fillStyle='#111';ctx.beginPath();ctx.arc(x+5,y+4,1,0,7);ctx.fill()}}
+  if(g.wall.clock){const x=OX+T*4.5,y=OY/2;ctx.fillStyle='#5a3a22';ctx.beginPath();ctx.arc(x,y,7.5,0,7);ctx.fill();ctx.fillStyle='#f4efe2';ctx.beginPath();ctx.arc(x,y,5.5,0,7);ctx.fill();ctx.strokeStyle='#111';ctx.lineWidth=1;const mins=rt?rt.t:17*60;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+Math.sin(mins/720*Math.PI*2)*3,y-Math.cos(mins/720*Math.PI*2)*3);ctx.moveTo(x,y);ctx.lineTo(x+Math.sin(mins/60*Math.PI*2)*4.6,y-Math.cos(mins/60*Math.PI*2)*4.6);ctx.stroke()}
   if(g.wall.board){ctx.fillStyle='#c9a46a';for(let i=0;i<5;i++)ctx.fillRect(OX+T*11.2+i*6,1,5,OY-2)}
   // 廚房：炭火台、爐台、油炸鍋、備料台、洗碗槽、出餐口
   const kx=OX+KIT.x*T,ky=OY+KIT.y*T;
@@ -1318,6 +1341,7 @@ function draw(){
   ctx.fillStyle='#c9a46a';rr(kx+4,ky+T*2.45,T*1.45,T*.5,3);ctx.fill();ctx.fillStyle='#f0e2c0';rr(kx+14,ky+T*2.52,T*.8,T*.34,2);ctx.fill();
   ctx.fillStyle='#a9b0b7';rr(kx+T*1.7,ky+T*2.45,T*1.15,T*.5,3);ctx.fill();ctx.fillStyle='#7e868e';rr(kx+T*1.78,ky+T*2.52,T*.98,T*.34,3);ctx.fill();
   const dishN=rt?Math.min(6,Math.ceil((rt.dishes||0)/3)):0;for(let i=0;i<dishN;i++){ctx.fillStyle='#f6f3ec';ctx.beginPath();ctx.ellipse(kx+T*2.0+(i%3)*9,ky+T*2.68-Math.floor(i/3)*3,4.5,2.2,0,0,7);ctx.fill();ctx.strokeStyle='#bbb';ctx.lineWidth=.6;ctx.stroke()}
+  if(g.equip.reizo){ctx.fillStyle='#c9ced4';rr(kx+2,ky+T*1.15,14,T*1.15,2);ctx.fill();ctx.strokeStyle='#8a9097';ctx.lineWidth=1;ctx.stroke();ctx.fillStyle='#6c7178';ctx.fillRect(kx+12,ky+T*1.35,2,10);ctx.fillRect(kx+12,ky+T*1.8,2,10);ctx.strokeStyle='#8a9097';ctx.beginPath();ctx.moveTo(kx+2,ky+T*1.72);ctx.lineTo(kx+16,ky+T*1.72);ctx.stroke()}
   // 出餐口
   ctx.fillStyle='#d8d2c4';ctx.fillRect(OX+(KIT.x+KIT.w)*T-10,OY+KPICK.y*T+4,10,T-8);
   ctx.save();ctx.translate(OX+4*T-5,OY+KPICK.y*T+T/2);ctx.rotate(-Math.PI/2);ctx.fillStyle='#222';ctx.font='700 10px sans-serif';ctx.textAlign='center';ctx.fillText('出餐',0,0);ctx.restore();
@@ -1441,6 +1465,23 @@ function drawFurn(o){
     for(let i=0;i<3;i++){const ph=(frameT*.5+i*20)%30;ctx.strokeStyle='rgba(255,255,255,.6)';ctx.beginPath();ctx.arc(x0+w-12,y0+h-10-ph,1.2,0,7);ctx.stroke()}}
   else if(o.kind==='ishidoro'){const cx=x0+T/2,by=y0+T-3;ctx.fillStyle='rgba(0,0,0,.25)';ctx.beginPath();ctx.ellipse(cx,by,12,3,0,0,7);ctx.fill();ctx.fillStyle='#8f8b84';rr(cx-9,by-6,18,6,2);ctx.fill();ctx.fillRect(cx-3,by-16,6,10);rr(cx-8,by-26,16,10,2);ctx.fill();
     ctx.fillStyle='rgba(255,200,110,.9)';ctx.fillRect(cx-4,by-24,8,6);ctx.fillStyle='#77736c';ctx.beginPath();ctx.moveTo(cx-13,by-26);ctx.lineTo(cx,by-35);ctx.lineTo(cx+13,by-26);ctx.closePath();ctx.fill();ctx.fillStyle='#8f8b84';ctx.beginPath();ctx.arc(cx,by-36,2.5,0,7);ctx.fill()}
+  else if(o.kind==='pachinko'){const cx=x0+T/2,by=y0+T-2;ctx.fillStyle='rgba(0,0,0,.25)';ctx.fillRect(cx-12,by-2,24,4);ctx.fillStyle='#8a1a2a';rr(cx-12,by-38,24,38,3);ctx.fill();
+    ctx.fillStyle='#e8eef4';ctx.beginPath();ctx.arc(cx,by-23,9.5,0,7);ctx.fill();ctx.fillStyle='#9aa3ad';for(let i=0;i<12;i++){ctx.beginPath();ctx.arc(cx-7+(i%4)*4.6,by-29+Math.floor(i/4)*5,.7,0,7);ctx.fill()}
+    for(let i=0;i<3;i++){const ph=(frameT*1.2+i*13)%20;ctx.fillStyle='#d0d6dc';ctx.beginPath();ctx.arc(cx-4+i*4+Math.sin(ph+i)*1.5,by-32+ph,1.3,0,7);ctx.fill()}
+    for(let i=0;i<5;i++){ctx.fillStyle=(Math.floor(frameT/8)+i)%2?'#ffd34d':'#ff5a8a';ctx.beginPath();ctx.arc(cx-9+i*4.5,by-35.5,1.4,0,7);ctx.fill()}ctx.fillStyle='#d4a72c';rr(cx-8,by-10,16,6,2);ctx.fill()}
+  else if(o.kind==='claw'){const cx=x0+T/2,by=y0+T-2;ctx.fillStyle='rgba(0,0,0,.25)';ctx.fillRect(cx-13,by-2,26,4);ctx.fillStyle='#f08ab0';rr(cx-13,by-40,26,40,3);ctx.fill();ctx.fillStyle='rgba(200,235,255,.75)';rr(cx-10,by-35,20,22,2);ctx.fill();
+    const cols=['#f2c94c','#8ad0f0','#f4f1ea','#b48ae0','#f08a5a'];for(let i=0;i<5;i++){const px=cx-7+(i%3)*6+(i>2?3:0),py=by-15-(i>2?5:0);ctx.fillStyle=cols[i];ctx.beginPath();ctx.arc(px,py,3,0,7);ctx.fill();ctx.fillStyle='#222';ctx.fillRect(px-1.4,py-.8,.8,.8);ctx.fillRect(px+.6,py-.8,.8,.8)}
+    const clx=cx+Math.sin(frameT*.05)*6;ctx.strokeStyle='#666';ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(clx,by-35);ctx.lineTo(clx,by-28);ctx.stroke();ctx.strokeStyle='#c0c6cc';ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(clx-3,by-25);ctx.lineTo(clx,by-28);ctx.lineTo(clx+3,by-25);ctx.stroke();
+    ctx.fillStyle='#3a88cc';rr(cx-10,by-11,20,8,2);ctx.fill();ctx.fillStyle='#d23a2a';ctx.beginPath();ctx.arc(cx+5,by-7,2,0,7);ctx.fill()}
+  else if(o.kind==='beerFridge'){const cx=x0+T/2,by=y0+T-2;ctx.fillStyle='rgba(0,0,0,.25)';ctx.fillRect(cx-12,by-2,24,4);ctx.fillStyle='#d8dde2';rr(cx-12,by-38,24,38,3);ctx.fill();ctx.fillStyle='#d23a2a';ctx.fillRect(cx-12,by-38,24,6);
+    ctx.fillStyle='rgba(170,215,240,.6)';rr(cx-9,by-30,18,26,2);ctx.fill();for(let r=0;r<3;r++)for(let i=0;i<4;i++){ctx.fillStyle=['#8a5a1a','#2d6b3a','#c9a046','#8a5a1a'][(i+r)%4];rr(cx-8+i*4.4,by-28+r*8.5,3,7,1.2);ctx.fill()}ctx.fillStyle='#9aa3ad';ctx.fillRect(cx+8,by-24,1.5,10)}
+  else if(o.kind==='kasa'){const cx=x0+T/2,by=y0+T-3;ctx.fillStyle='#5a3a22';rr(cx-8,by-10,16,10,2);ctx.fill();for(let i=0;i<3;i++){ctx.save();ctx.translate(cx-5+i*5,by-10);ctx.rotate((i-1)*.2);ctx.fillStyle=['#c4271c','#2d4f8a','#c4271c'][i];ctx.beginPath();ctx.moveTo(-2.5,0);ctx.lineTo(2.5,0);ctx.lineTo(1,-24);ctx.lineTo(-1,-24);ctx.closePath();ctx.fill();ctx.restore()}}
+  else if(o.kind==='komainu'){const by=y0+T-3;for(const s of[-1,1]){const cx=x0+T/2+s*9;ctx.fillStyle='#8f8b84';rr(cx-6,by-6,12,6,1);ctx.fill();ctx.fillStyle='#a8a49c';ctx.beginPath();ctx.ellipse(cx,by-13,6,7,0,0,7);ctx.fill();ctx.beginPath();ctx.arc(cx,by-21,5,0,7);ctx.fill();ctx.fillStyle='#77736c';ctx.beginPath();ctx.arc(cx-1.8,by-22,1,0,7);ctx.arc(cx+1.8,by-22,1,0,7);ctx.fill();ctx.strokeStyle='#6a665f';ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,by-19,2,0,Math.PI);ctx.stroke()}}
+  else if(o.kind==='komodaru'){const cx=x0+T/2,by=y0+T-3;const bar=(x,y,r)=>{ctx.fillStyle='#d8c690';ctx.beginPath();ctx.ellipse(x,y,r,r*.85,0,0,7);ctx.fill();ctx.strokeStyle='#5a3a22';ctx.lineWidth=1.2;ctx.stroke();ctx.fillStyle='#b0241c';ctx.font='900 7px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('酒',x,y)};bar(cx-7,by-7,7);bar(cx+7,by-7,7);bar(cx,by-19,7)}
+  else if(o.kind==='bigLantern'){const cx=x0+T/2,by=y0+T-3;ctx.fillStyle='#3a2414';ctx.fillRect(cx-1.5,by-36,3,36);ctx.fillRect(cx-8,by-3,16,3);ctx.fillRect(cx-8,by-36,16,2);drawLantern(cx,by-32,1.45)}
+  else if(o.kind==='bamboo'){const cx=x0+T/2,by=y0+T-3;ctx.fillStyle='#4a5a6a';rr(cx-8,by-8,16,8,2);ctx.fill();ctx.strokeStyle='#6a9a3a';ctx.lineWidth=2.5;for(const dx of[-4,0,4]){ctx.beginPath();ctx.moveTo(cx+dx,by-8);ctx.lineTo(cx+dx*1.5,by-36);ctx.stroke()}ctx.fillStyle='#5f9a44';for(let i=0;i<6;i++){ctx.beginPath();ctx.ellipse(cx-6+(i%3)*6,by-28-Math.floor(i/3)*7,5,1.8,(i%2?.6:-.6),0,7);ctx.fill()}}
+  else if(o.kind==='tsukubai'){const cx=x0+T/2,cy=y0+T/2+4;ctx.fillStyle='#8f8b84';ctx.beginPath();ctx.ellipse(cx,cy,14,10,0,0,7);ctx.fill();ctx.fillStyle='#2f5f7e';ctx.beginPath();ctx.ellipse(cx,cy-1,8,5,0,0,7);ctx.fill();ctx.strokeStyle='#6a9a3a';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(cx+16,cy-14);ctx.lineTo(cx+3,cy-6);ctx.stroke();
+    const ph=(frameT*.4)%10;ctx.fillStyle='rgba(180,220,255,.9)';ctx.beginPath();ctx.arc(cx+2,cy-6+ph*.6,1.2,0,7);ctx.fill();ctx.strokeStyle=`rgba(200,230,255,${1-ph/10})`;ctx.lineWidth=.8;ctx.beginPath();ctx.ellipse(cx,cy-1,ph*.7,ph*.45,0,0,7);ctx.stroke()}
   else if(o.kind==='koi'){const cx=x0+w/2,cy=y0+h/2;ctx.fillStyle='#8f8b84';ctx.beginPath();ctx.ellipse(cx,cy,w/2-2,h/2-2,0,0,7);ctx.fill();ctx.fillStyle='#1f4f6e';ctx.beginPath();ctx.ellipse(cx,cy,w/2-8,h/2-8,0,0,7);ctx.fill();
     for(let i=0;i<4;i++){const a=frameT*.02*(i%2?1:-1)+i*1.6,fx=cx+Math.cos(a)*(w/4),fy=cy+Math.sin(a)*(h/5);ctx.save();ctx.translate(fx,fy);ctx.rotate(a+(i%2?Math.PI/2:-Math.PI/2));ctx.fillStyle=['#f07a2a','#f4f1ea','#d23a2a','#f2c94c'][i];ctx.beginPath();ctx.ellipse(0,0,6,2.6,0,0,7);ctx.fill();ctx.beginPath();ctx.moveTo(-6,0);ctx.lineTo(-9,-2.5);ctx.lineTo(-9,2.5);ctx.fill();ctx.restore()}
     ctx.fillStyle='#4f8a3a';ctx.beginPath();ctx.arc(cx+w/5,cy-h/6,5,.3,Math.PI*2-.3);ctx.lineTo(cx+w/5,cy-h/6);ctx.fill()}
@@ -1842,7 +1883,7 @@ function viewReport(){
   <div class="kpi"><div>來客<b>${r.guests} 人</b></div><div>平均滿意度<b>${Math.round(r.sat)}</b></div><div>生氣離開<b>${r.angry} 組</b></div><div>本日損益<b class="${r.profit>=0?'good':'bad'}">${fmt(r.profit)}</b></div></div>
   <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
    <div><div class="sec">收支</div><table class="t">${pnl.map(([k,v])=>`<tr><td>${k}</td><td class="n ${v<0?'bad':''}">${fmt(v)}</td></tr>`).join('')}<tr><th>本日損益</th><th class="n">${fmt(r.profit)}</th></tr></table>
-   <div class="muted" style="margin-top:4px">沒賣完丟掉的食材：${fmt(R.waste)}（已包含在進貨裡）。飲料可以留到明天。${R.nomiN||R.courseN?`<br>今天 ${R.nomiN} 組點飲み放題、${R.courseN} 組點宴會套餐，套餐收入 ${fmt(R.feeRev)}（已含在營業額）。`:''}${R.loanPay?`<br>還款 ${fmt(R.loanPay)} 已從資金扣除。`:''}</div></div>
+   <div class="muted" style="margin-top:4px">沒賣完丟掉的食材：${fmt(R.waste)}（已包含在進貨裡）。飲料可以留到明天。${R.nomiN||R.courseN?`<br>今天 ${R.nomiN} 組點飲み放題、${R.courseN} 組點宴會套餐，套餐收入 ${fmt(R.feeRev)}（已含在營業額）。`:''}${R.gameRev?`<br>彈珠台和夾娃娃機收入 ${fmt(R.gameRev)}（已含在營業額）。`:''}${g.equip.reizo?'<br>有大冰箱，沒賣完的料理有一半留到明天。':''}${R.loanPay?`<br>還款 ${fmt(R.loanPay)} 已從資金扣除。`:''}</div></div>
    <div><div class="sec">客層</div><div class="tw"><table class="t"><tr><th>客層</th><th class="n">經過</th><th class="n">注意到</th><th class="n">進店</th><th class="n">滿意</th></tr>${TYPES.map(t=>{const f=R.funnel[t];return`<tr><td>${CT[t].icon} ${CT[t].label}</td><td class="n">${f.pass}</td><td class="n">${f.notice}</td><td class="n">${f.enter}</td><td class="n">${f.happy}</td></tr>`}).join('')}</table></div></div>
   </div>
   <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
@@ -1950,7 +1991,7 @@ function viewShop(){
   const lockTxt=L=>`需要 ${'🏮'.repeat(L)}`;
   const card=(title,desc,cost,act,lock,owned)=>`<div class="card"><h3>${title}</h3><div>${desc}</div><div class="row"><b class="num">${fmt(cost)}</b>${lock?`<span class="chip r">${lock}</span>`:owned?`<span class="chip g">${owned}</span>`:''}</div><button class="btn small primary" ${act} ${lock||cost>g.cash?'disabled':''}>購買</button></div>`;
   if(tab==='furn'||tab==='deco'){
-    h+='<div class="grid">'+Object.entries(FURN).filter(([k,f])=>tab==='furn'?f.cap:!f.cap).map(([k,f])=>{const have=g.layout.filter(o=>o.kind===k).length+(g.storage[k]||0);return card(f.label+(f.cap?`（${f.cap} 人）`:''),f.desc+`<br>大小 ${f.w}×${f.h} 格`,f.cost,`data-buy="furn:${k}"`,f.L>g.lantern?lockTxt(f.L):'',have?`擁有 ${have}`:'')}).join('');
+    h+='<div class="grid">'+Object.entries(FURN).filter(([k,f])=>tab==='furn'?f.cap:!f.cap&&!f.equip).map(([k,f])=>{const have=g.layout.filter(o=>o.kind===k).length+(g.storage[k]||0);return card(f.label+(f.cap?`（${f.cap} 人）`:''),f.desc+`<br>大小 ${f.w}×${f.h} 格`,f.cost,`data-buy="furn:${k}"`,f.L>g.lantern?lockTxt(f.L):'',have?`擁有 ${have}`:'')}).join('');
     if(tab==='deco')h+=Object.entries(WALLDEC).map(([k,w])=>card(w.label+'（掛牆上）',`環境 +${w.env}（最多算 ${w.max} 個）`,w.cost,`data-buy="wall:${k}"`,w.L>g.lantern?lockTxt(w.L):'',g.wall[k]?`已掛 ${g.wall[k]}`:'')).join('');
     h+='</div><div class="muted">桌椅和落地擺飾買了會先放進倉庫，到「🪑 擺設」放到店裡。</div>';
   }
@@ -1963,7 +2004,8 @@ function viewShop(){
   if(tab==='uni'){const rn={hall:'🙇 外場',chef:'🔪 料理人',bar:'🍶 吧台手'};
     h+='<div class="muted">制服要一級一級升級。等級越高，環境分越高，那個職位的員工每天心情也會多加一點；外場制服還會讓客人覺得服務更體面。</div><div class="grid">'+Object.keys(UNIFORMS).map(r=>{const cur=g.uni[r]||0,TT=UNIFORMS[r],nx=TT[cur+1];
       return`<div class="card"><h3>${rn[r]}</h3>${TT.map((u,i)=>`<div class="row"><span>${i<=cur?'✅':'⬜'} 第 ${i+1} 級・${u.label}</span><span class="muted">環境 +${u.env}</span></div>`).join('')}${nx?`<div class="row"><b class="num">${fmt(nx.cost)}</b>${nx.L>g.lantern?`<span class="chip r">${lockTxt(nx.L)}</span>`:''}</div><button class="btn small primary" data-uni="${r}" ${nx.L>g.lantern||nx.cost>g.cash?'disabled':''}>升級成「${nx.label}」</button>`:'<span class="chip g">已經是最高級</span>'}</div>`}).join('')+'</div>'}
-  if(tab==='equip'){h+='<div class="grid">'+Object.entries(EQUIP).map(([k,e])=>g.equip[k]?`<div class="card sel"><h3>${e.label}</h3><div>${e.desc}</div><span class="chip g">已安裝</span></div>`:card(e.label,e.desc,e.cost,`data-buy="equip:${k}"`,e.L>g.lantern?lockTxt(e.L):'','')).join('')+'</div>'}
+  if(tab==='equip'){h+='<div class="grid">'+Object.entries(EQUIP).map(([k,e])=>g.equip[k]?`<div class="card sel"><h3>${e.label}</h3><div>${e.desc}</div><span class="chip g">已安裝</span></div>`:card(e.label,e.desc,e.cost,`data-buy="equip:${k}"`,e.L>g.lantern?lockTxt(e.L):'','')).join('')+'</div>';
+    h+='<div class="sec">放在店裡的設備</div><div class="grid">'+Object.entries(FURN).filter(([k,f])=>f.equip).map(([k,f])=>{const have=g.layout.filter(o=>o.kind===k).length+(g.storage[k]||0);return card(f.label,f.desc,f.cost,`data-buy="furn:${k}"`,f.L>g.lantern?lockTxt(f.L):'',have?`擁有 ${have}`:'')}).join('')+'</div><div class="muted">這三樣買了會先放進倉庫，到「🪑 擺設」放到店裡喜歡的位置。</div>'}
   if(tab==='kitchen'){h+='<div class="grid">'+KITCHEN.map((k,i)=>i<=g.kitchen?`<div class="card ${i===g.kitchen?'sel':''}"><h3>${k.label}</h3><div>可容納 ${k.cap} 位料理人${i?`・菜單上限 +${i*3} 道`:''}</div><span class="chip g">${i===g.kitchen?'目前':'已升級'}</span></div>`:card(k.label,`可容納 ${k.cap} 位料理人・菜單上限 +${i*3} 道`,k.cost,`data-buy="kitchen:${i}"`,k.L>g.lantern?lockTxt(k.L):(i>g.kitchen+1?'先升級前一級':''),'')).join('')+'</div>'}
   sheet('🛒 商店',h)}
 function viewPromo(){
