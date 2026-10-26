@@ -171,7 +171,7 @@ label.f input:not([type=range]),label.f select{font:inherit;padding:8px 10px;bor
 
 <script>
 'use strict';
-const APP_VER='2026-10-26j';
+const APP_VER='2026-10-26k';
 // 店主模式：網頁版（github.io）上只有輸入密碼的電腦看得到設定類選單；claude.ai 版一律視為店主
 const ONLINE=/github\.io$/.test(location.hostname);
 const OWNER_HASH='ed77e1a0f2358e25e8d7d31e7e7e33639d0a0468a3f62875b695d5e6438763a1';
@@ -243,6 +243,15 @@ const MENU=[
   {id:'oyakodon',n:'親子丼',cat:'〆',p:240,c:70,t:10,q:60,tags:['〆','份量'],L:1},
   {id:'matcha',n:'抹茶冰淇淋',cat:'甜點',p:120,c:35,t:2,q:55,tags:['甜','打卡'],L:0},
   {id:'warabi',n:'黑糖蕨餅',cat:'甜點',p:140,c:40,t:3,q:60,tags:['甜','道地'],L:1},
+  {id:'purin',n:'焦糖布丁',cat:'甜點',p:130,c:35,t:2,q:60,tags:['甜','打卡'],L:0},
+  {id:'dango',n:'醬油糰子',cat:'甜點',p:100,c:25,t:4,q:55,tags:['甜','道地'],L:0},
+  {id:'monaka',n:'冰淇淋最中',cat:'甜點',p:150,c:40,t:2,q:60,tags:['甜','打卡'],L:0},
+  {id:'yuzusorbet',n:'柚子雪酪',cat:'甜點',p:140,c:35,t:2,q:60,tags:['清爽','甜'],L:0},
+  {id:'taiyaki',n:'鯛魚燒',cat:'甜點',p:120,c:30,t:5,q:55,tags:['甜','份量'],L:0},
+  {id:'anmitsu',n:'餡蜜',cat:'甜點',p:180,c:50,t:3,q:65,tags:['甜','道地','清爽'],L:1},
+  {id:'matchacake',n:'抹茶起司蛋糕',cat:'甜點',p:180,c:55,t:2,q:65,tags:['甜','打卡'],L:1},
+  {id:'daifuku',n:'草莓大福',cat:'甜點',p:160,c:50,t:2,q:68,tags:['甜','打卡','道地'],L:1},
+  {id:'brulee',n:'焙茶烤布蕾',cat:'甜點',p:220,c:65,t:4,q:72,tags:['甜','高級','打卡'],L:2},
   {id:'nama',n:'生啤酒',cat:'酒',p:170,c:45,t:1.5,q:55,tags:['啤酒'],L:0},
   {id:'highball',n:'角瓶 Highball',cat:'酒',p:190,c:45,t:2,q:55,tags:['啤酒','清爽'],L:0},
   {id:'lemonsour',n:'檸檬沙瓦',cat:'酒',p:180,c:40,t:2,q:55,tags:['沙瓦','清爽'],L:0},
@@ -251,8 +260,26 @@ const MENU=[
   {id:'shochu',n:'本格燒酎',cat:'酒',p:240,c:70,t:1.5,q:55,tags:['燒酎'],L:0},
   {id:'calpis',n:'可爾必思沙瓦',cat:'酒',p:190,c:45,t:2,q:55,tags:['沙瓦','甜'],L:1},
   {id:'daiginjo',n:'純米大吟釀',cat:'酒',p:720,c:280,t:2,q:75,tags:['清酒','高級'],L:2},
+  {id:'bottlebeer',n:'瓶裝啤酒',cat:'酒',p:180,c:50,t:1,q:55,tags:['啤酒'],L:0},
+  {id:'craft',n:'在地精釀啤酒',cat:'酒',p:240,c:70,t:1.5,q:62,tags:['啤酒','打卡'],L:0},
+  {id:'ginger',n:'薑汁 Highball',cat:'酒',p:200,c:48,t:2,q:57,tags:['啤酒','清爽'],L:0},
+  {id:'yuzusour',n:'柚子沙瓦',cat:'酒',p:200,c:45,t:2,q:58,tags:['沙瓦','清爽'],L:0},
+  {id:'gfsour',n:'葡萄柚沙瓦',cat:'酒',p:190,c:42,t:2,q:56,tags:['沙瓦','清爽'],L:0},
+  {id:'oolonghai',n:'烏龍燒酎',cat:'酒',p:200,c:45,t:1.5,q:55,tags:['燒酎','清爽'],L:0},
+  {id:'umerock',n:'加冰梅酒',cat:'酒',p:220,c:55,t:1.5,q:58,tags:['甜','清爽'],L:0},
+  {id:'yuzushu',n:'柚子酒',cat:'酒',p:240,c:60,t:1.5,q:60,tags:['甜','打卡'],L:1},
+  {id:'nigori',n:'濁酒',cat:'酒',p:280,c:85,t:2,q:62,tags:['清酒','甜','打卡'],L:1},
+  {id:'junmai',n:'純米酒一合',cat:'酒',p:380,c:130,t:2,q:66,tags:['清酒','道地'],L:1},
+  {id:'imo',n:'芋燒酎',cat:'酒',p:260,c:75,t:1.5,q:60,tags:['燒酎','道地'],L:1},
+  {id:'whisky',n:'日本威士忌',cat:'酒',p:420,c:150,t:2,q:70,tags:['高級','下酒'],L:2},
   {id:'oolong',n:'烏龍茶',cat:'飲料',p:70,c:12,t:1,q:50,tags:[],L:0},
   {id:'ramune',n:'彈珠汽水',cat:'飲料',p:80,c:25,t:1,q:50,tags:['甜','打卡'],L:0},
+  {id:'calpisw',n:'可爾必思',cat:'飲料',p:90,c:20,t:1,q:52,tags:['甜'],L:0},
+  {id:'greentea',n:'熱綠茶',cat:'飲料',p:60,c:8,t:1,q:50,tags:['熱食'],L:0},
+  {id:'mugicha',n:'冰麥茶',cat:'飲料',p:60,c:8,t:1,q:50,tags:['清爽'],L:0},
+  {id:'cola',n:'可樂',cat:'飲料',p:70,c:18,t:1,q:50,tags:['甜'],L:0},
+  {id:'oj',n:'柳橙汁',cat:'飲料',p:90,c:25,t:1,q:52,tags:['甜','清爽'],L:0},
+  {id:'yuzusoda',n:'柚子氣泡飲',cat:'飲料',p:110,c:28,t:1,q:56,tags:['清爽','打卡'],L:0},
   {id:'funamori',n:'尾牙豪華船盛',cat:'小菜',p:1680,c:720,t:12,q:80,tags:['高級','打卡','道地'],L:0,season:'weiya'},
   {id:'karasumi',n:'炙燒烏魚子',cat:'料理',p:380,c:140,t:6,q:70,tags:['下酒','高級'],L:0,season:'weiya'},
   {id:'toshikoshi',n:'跨年蕎麥麵',cat:'〆',p:220,c:60,t:8,q:65,tags:['〆','熱食','道地'],L:0,season:'newyear'},
@@ -644,7 +671,7 @@ function envParts(){
   return p;
 }
 const hasFurn=k=>g.layout.some(o=>o.kind===k);
-const SELF_DRINK=['nama','oolong','ramune','bigbeer'];
+const SELF_DRINK=['nama','oolong','ramune','bigbeer','bottlebeer','cola','mugicha','greentea','oj','calpisw'];
 const envScore=()=>{const p=envParts();return clamp(Object.values(p).reduce((a,b)=>a+b,0),0,100)};
 const priceOf=id=>Math.round(MI[id].p*g.menu[id].pm/10)*10;
 const listed=()=>MENU.filter(m=>g.menu[m.id]&&g.menu[m.id].on&&avail(m));
@@ -954,7 +981,7 @@ function dishQ(id,s){
   return clamp(q,0,100);
 }
 const BARX={tap:10.07,shake:7.7,sake:5.9,soft:8.9};
-const drinkKind=m=>m.cat==='飲料'?'soft':(m.tags.includes('清酒')||m.tags.includes('燒酎'))?'sake':(m.id==='nama'||m.id==='bigbeer')?'tap':'shake';
+const drinkKind=m=>m.cat==='飲料'?'soft':(m.tags.includes('清酒')||m.tags.includes('燒酎')||m.id==='whisky')?'sake':(['nama','bigbeer','bottlebeer','craft'].includes(m.id))?'tap':'shake';
 function updateBar(dt){
   for(const b of rt.bars){
     if(b.ticket){b.busy+=dt;if(b.ticket.status==='void'){b.ticket=null;continue}
