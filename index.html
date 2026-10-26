@@ -171,7 +171,7 @@ label.f input:not([type=range]),label.f select{font:inherit;padding:8px 10px;bor
 
 <script>
 'use strict';
-const APP_VER='2026-10-26g';
+const APP_VER='2026-10-26h';
 // 店主模式：網頁版（github.io）上只有輸入密碼的電腦看得到設定類選單；claude.ai 版一律視為店主
 const ONLINE=/github\.io$/.test(location.hostname);
 const OWNER_HASH='ed77e1a0f2358e25e8d7d31e7e7e33639d0a0468a3f62875b695d5e6438763a1';
@@ -342,6 +342,14 @@ const FURN={
   taru:{label:'清酒酒樽',w:1,h:1,cap:0,cost:6000,env:5,max:2,L:0,desc:'稻草包的酒樽，環境 +5（最多 2 個）。'},
   fridge:{label:'清酒冰箱',w:1,h:1,cap:0,cost:25000,env:9,max:1,L:1,desc:'透明門的日本酒櫃，環境 +9，清酒更好賣。'},
   garden:{label:'枯山水小庭',w:2,h:2,cap:0,cost:60000,env:16,max:1,L:2,desc:'白砂與石頭的小庭院，環境 +16。'},
+  lamp:{label:'和紙落地燈',w:1,h:1,cap:0,cost:3500,env:3,max:3,L:0,desc:'暖黃色的和紙燈，環境 +3（最多算 3 個）。'},
+  tanuki:{label:'信樂狸貓',w:1,h:1,cap:0,cost:4000,env:4,max:1,L:0,desc:'戴斗笠、提酒壺的陶瓷狸貓，招客好兆頭，環境 +4。'},
+  bonsai:{label:'黑松盆景',w:1,h:1,cap:0,cost:9000,env:5,max:2,L:1,desc:'修剪整齊的黑松，環境 +5（最多 2 個）。'},
+  parasol:{label:'紅色野點傘',w:1,h:1,cap:0,cost:8000,env:5,max:1,L:1,desc:'茶會用的大紅傘，很好拍照，環境 +5。'},
+  sakeWall:{label:'一升瓶酒牆',w:2,h:1,cap:0,cost:20000,env:7,max:1,L:1,desc:'整排日本酒一升瓶，清酒更好賣，環境 +7。'},
+  tank:{label:'活魚水族箱',w:2,h:1,cap:0,cost:30000,env:8,max:1,L:1,desc:'現撈的魚在裡面游，生魚片更好賣，環境 +8。'},
+  ishidoro:{label:'石燈籠',w:1,h:1,cap:0,cost:15000,env:6,max:1,L:2,desc:'庭園用的石燈籠，環境 +6。'},
+  koi:{label:'錦鯉小池',w:2,h:2,cap:0,cost:80000,env:18,max:1,L:3,desc:'店中央的錦鯉池，三盞燈名店的門面，環境 +18。'},
 };
 // 牆上裝飾（買了直接掛上去）
 const WALLDEC={
@@ -349,13 +357,44 @@ const WALLDEC={
   flag:{label:'大漁旗',cost:3000,env:3,max:2,L:0},
   board:{label:'手寫木牌菜單',cost:2000,env:3,max:1,L:0},
   ukiyoe:{label:'浮世繪畫框',cost:6000,env:4,max:3,L:0},
+  daruma:{label:'達摩不倒翁',cost:2500,env:2,max:2,L:0},
+  scroll:{label:'書法掛軸',cost:5000,env:3,max:2,L:0},
+  mask:{label:'狐狸面具',cost:4000,env:3,max:1,L:0},
+  tanzaku:{label:'短冊手寫菜單',cost:3000,env:3,max:1,L:0},
+  neon:{label:'復古霓虹招牌',cost:18000,env:6,max:1,L:1},
 };
 const STYLES={
-  floor:{concrete:{label:'水泥地',cost:0,env:0,L:0},wood:{label:'杉木地板',cost:22000,env:6,L:0},slate:{label:'黑石板',cost:48000,env:10,L:1}},
-  wall:{white:{label:'白漆牆',cost:0,env:0,L:0},cedar:{label:'杉木板牆',cost:18000,env:5,L:0},bamboo:{label:'竹編牆',cost:26000,env:7,L:1},lacquer:{label:'黑漆格子',cost:52000,env:11,L:2}},
-  noren:{ai:{label:'藍染暖簾',cost:0,env:0,L:0},aka:{label:'赤暖簾',cost:4000,env:2,L:0},kamon:{label:'手染家紋暖簾',cost:15000,env:5,L:1}},
-  uniform:{tee:{label:'黑色 T 恤',cost:0,env:0,L:0},samue:{label:'藍染作務衣',cost:12000,env:4,L:0},happi:{label:'祭典法被',cost:20000,env:6,L:1}},
+  floor:{concrete:{label:'水泥地',cost:0,env:0,L:0},wood:{label:'杉木地板',cost:22000,env:6,L:0},slate:{label:'黑石板',cost:48000,env:10,L:1},terrazzo:{label:'洗石子地板',cost:26000,env:7,L:0},checker:{label:'市松磁磚',cost:30000,env:8,L:0}},
+  wall:{white:{label:'白漆牆',cost:0,env:0,L:0},cedar:{label:'杉木板牆',cost:18000,env:5,L:0},bamboo:{label:'竹編牆',cost:26000,env:7,L:1},lacquer:{label:'黑漆格子',cost:52000,env:11,L:2},brick:{label:'紅磚牆',cost:20000,env:6,L:0},shoji:{label:'障子紙門',cost:34000,env:9,L:1}},
+  noren:{ai:{label:'藍染暖簾',cost:0,env:0,L:0},aka:{label:'赤暖簾',cost:4000,env:2,L:0},kamon:{label:'手染家紋暖簾',cost:15000,env:5,L:1},shiro:{label:'白麻暖簾',cost:3000,env:1,L:0},kin:{label:'金線刺繡暖簾',cost:30000,env:7,L:2}},
 };
+// ---- 制服升級、季節佈置 ----
+const UNIFORMS={
+  hall:[{label:'黑色 T 恤＋圍裙',cost:0,env:0,L:0,body:'#1e1e1e',apron:'#6b4528'},
+        {label:'藍染作務衣',cost:12000,env:3,L:0,body:'#24427a',apron:'#22201e'},
+        {label:'祭典法被',cost:22000,env:5,L:1,body:'#b8401f',apron:'#22201e'},
+        {label:'紫紺和服＋金腰帶',cost:45000,env:8,L:2,body:'#4a2a6e',apron:null,obi:true}],
+  chef:[{label:'白色廚師服',cost:0,env:0,L:0},
+        {label:'廚師服＋藍染圍裙',cost:10000,env:2,L:0,apron:'#1e2a44'},
+        {label:'職人白衣（胸口繡店徽）',cost:24000,env:4,L:1,apron:'#1e2a44',crest:true},
+        {label:'名店金扣廚師服',cost:48000,env:6,L:2,apron:'#1e2a44',crest:true,gold:true}],
+  bar:[{label:'白襯衫＋黑背心',cost:0,env:0,L:0},
+       {label:'紅領結背心',cost:10000,env:2,L:0,tie:'#a3201a'},
+       {label:'黑羽織',cost:24000,env:4,L:1,haori:true},
+       {label:'金扣酒保背心＋領結',cost:45000,env:6,L:2,tie:'#a3201a',gold:true}],
+};
+const uniEnv=()=>{const u=g.uni||{};return Object.keys(UNIFORMS).reduce((s,r)=>s+UNIFORMS[r][u[r]||0].env,0)};
+const SEASON_DECO=[
+  {id:'weiyaBanner',season:'weiya',label:'紅色春酒布條',cost:5000,env:3},
+  {id:'goldLantern',season:'weiya',label:'金箔招財燈籠',cost:12000,env:5},
+  {id:'kadomatsu',season:'newyear',label:'門松一對',cost:8000,env:4},
+  {id:'shimenawa',season:'newyear',label:'注連繩',cost:6000,env:3},
+  {id:'sakuraBranch',season:'sakura',label:'櫻花枝與落花',cost:9000,env:5},
+  {id:'pinkLantern',season:'sakura',label:'粉紅提燈串',cost:6000,env:3},
+  {id:'natsuLantern',season:'natsu',label:'祭典燈籠串',cost:8000,env:5},
+  {id:'furin',season:'natsu',label:'風鈴與竹簾',cost:5000,env:3},
+];
+const seasonDecoEnv=()=>{const ss=activeSeasons(g.day).map(x=>x.id);return SEASON_DECO.reduce((s,d)=>s+(g.sdeco&&g.sdeco[d.id]&&ss.includes(d.season)?d.env:0),0)};
 const EQUIP={
   beer:{label:'專業生啤機',cost:18000,daily:0,L:0,desc:'出酒時間 ×0.7。'},
   pos:{label:'點餐平板',cost:12000,daily:50,L:0,desc:'外場點餐時間 ×0.6。每日系統費 $50。'},
@@ -478,14 +517,14 @@ function activate(S0){
   for(const l of S.loans)attachLoan(l);
   RT=S.shops.map(()=>null);MAPS=[];
   S.shops.forEach((sh,i)=>{bindShop(S,sh);for(const m of MENU)if(!sh.menu[m.id])sh.menu[m.id]={on:!!m.season,pm:1,auto:true,qty:0,stock:0,sold:5};
-    for(const t of TYPES)if(sh.rep[t]==null)sh.rep[t]=.5;sh.openedDay=sh.openedDay||1;sh.nomi=sh.nomi||{on:false,price:590};sh.course=sh.course||{on:false,price:1480};g=sh;rebuildMap();MAPS[i]=MAP;if(!sh.today)planDay()});
+    for(const t of TYPES)if(sh.rep[t]==null)sh.rep[t]=.5;sh.openedDay=sh.openedDay||1;sh.nomi=sh.nomi||{on:false,price:590};sh.course=sh.course||{on:false,price:1480};sh.uni=sh.uni||{hall:({samue:1,happi:2})[sh.styles.uniform]||0,chef:0,bar:0};sh.sdeco=sh.sdeco||{};g=sh;rebuildMap();MAPS[i]=MAP;if(!sh.today)planDay()});
   S.cur=clamp(S.cur||0,0,S.shops.length-1);setCtx(S.cur);rt=null}
 function makeShop(o){
   const sh={name:o.name||'合',owner:o.owner||'',loc:o.loc,lantern:0,rep:Object.fromEntries(TYPES.map(t=>[t,o.rep||.5])),staff:[],nextId:1,menu:{},
     layout:[{uid:1,kind:'t4',x:6,y:5,rot:0},{uid:2,kind:'t4',x:10,y:5,rot:0},{uid:3,kind:'t2',x:13,y:3,rot:0},{uid:4,kind:'t2',x:3,y:5,rot:0}],nextUid:5,
     storage:{},wall:{lantern:2},styles:{floor:'concrete',wall:'white',noren:'ai',uniform:'tee'},equip:{},kitchen:0,
     promos:[],sign:false,hours:{open:17,close:24},nextHours:null,history:[],usedChars:{},applicants:[],adFree:true,
-    inspectorDay:null,inspectWait:0,lanternDay:0,buzzUntil:0,viralUntil:0,badUntil:0,hikeUntil:0,repBoostUntil:0,last:null,today:null,ended:false,tutorial:true,openedDay:o.day||1,nomi:{on:false,price:590},course:{on:false,price:1480}};
+    inspectorDay:null,inspectWait:0,lanternDay:0,buzzUntil:0,viralUntil:0,badUntil:0,hikeUntil:0,repBoostUntil:0,last:null,today:null,ended:false,tutorial:true,openedDay:o.day||1,nomi:{on:false,price:590},course:{on:false,price:1480},uni:{hall:0,chef:0,bar:0},sdeco:{}};
   const on=['edamame','kyuri','potesara','negima','kawa','butabara','shiitake','tsukune','karaage','fries','tamagoyaki','yakiudon','ochazuke','nama','highball','lemonsour'];
   for(const m of MENU)sh.menu[m.id]={on:on.includes(m.id)||!!m.season,pm:1,auto:true,qty:0,stock:0,sold:isDrink(m)?24:10};
   return sh}
@@ -582,7 +621,7 @@ const staffOf=r=>g.staff.filter(s=>s.role===r);
 const hasPerk=p=>g.staff.some(s=>s.perk===p&&!s.sick);
 const wageOf=s=>s.wage;
 function envParts(){
-  const p={base:20,floor:STYLES.floor[g.styles.floor].env,wall:STYLES.wall[g.styles.wall].env,noren:STYLES.noren[g.styles.noren].env,uniform:STYLES.uniform[g.styles.uniform].env,deco:0,tv:g.equip.tv?3:0,crowd:0};
+  const p={base:20,floor:STYLES.floor[g.styles.floor].env,wall:STYLES.wall[g.styles.wall].env,noren:STYLES.noren[g.styles.noren].env,uniform:uniEnv(),season:seasonDecoEnv(),deco:0,tv:g.equip.tv?3:0,crowd:0};
   const cnt={};for(const o of g.layout){const f=FURN[o.kind];cnt[o.kind]=(cnt[o.kind]||0)+1;if(f.cap){p.deco+=f.env}else if(cnt[o.kind]<=(f.max||1))p.deco+=f.env}
   for(const k in g.wall){const w=WALLDEC[k];p.deco+=Math.min(g.wall[k],w.max)*w.env}
   let tiles=0;for(const o of g.layout)if(FURN[o.kind].cap)tiles+=footprint(o).length;
@@ -772,7 +811,7 @@ function itemWeight(m,p,round){
   const price=priceOf(m.id);if(price>p.pp*.55)w*=.3;
   if(g.today.weather==='寒流'&&(m.tags.includes('熱食')||m.id==='sake'||m.id==='shochu'||m.id==='oden'))w*=1.8;
   if(hasPerk('sake')&&(m.id==='sake'||m.id==='shochu'||m.id==='daiginjo'))w*=1.6;
-  if(g.layout.some(o=>o.kind==='fridge')&&m.tags.includes('清酒'))w*=1.3;
+  if(g.layout.some(o=>o.kind==='fridge')&&m.tags.includes('清酒'))w*=1.3;if(g.layout.some(o=>o.kind==='sakeWall')&&m.tags.includes('清酒'))w*=1.2;if(g.layout.some(o=>o.kind==='tank')&&['salmon','moriawase','funamori'].includes(m.id))w*=1.3;
   if(m.cat==='〆')w*=round>=2?1.6:(p.type==='night'?1.4:.25);
   if(m.cat==='甜點')w*=round>=2?1:.3;
   return Math.max(.05,w);
@@ -832,7 +871,7 @@ function calcSat(p){
   const spentPP=(p.served.reduce((s,x)=>s+x.price,0)+(p.fee||0))/p.size;
   parts.price=(-(pms-1)*40-(!p.fee&&spentPP>CT[p.type].pp*1.05?(spentPP/CT[p.type].pp-1)*30:0))*w.price;
   if(p.fee&&['toPay','waitPay','leave'].includes(p.state)){const v=(p.inclValue||0)/p.fee;parts.price+=v>=1?Math.min(8,(v-1)*12):-(1-v)*20}
-  const sv=p.svc.length?p.svc.reduce((a,b)=>a+b,0)/p.svc.length:50;parts.svc=(sv-50)*.18*w.svc+(g.equip.pay?2:0);
+  const sv=p.svc.length?p.svc.reduce((a,b)=>a+b,0)/p.svc.length:50;parts.svc=(sv-50)*.18*w.svc+(g.equip.pay?2:0)+(g.uni?g.uni.hall*1.5:0);
   parts.env=(envScore()-40)*.2*w.env;
   parts.other=-p.stockout*4-(p.dirtySeat?8:0)-(rt?(rt.wc>70?5:rt.wc>55?1.5:0)+Math.min(4,rt.spots.length*.5):0)+(p.type==='tourist'&&hasPerk('tourist')?8:0);
   const total=clamp(82+Object.values(parts).reduce((a,b)=>a+b,0),0,100);
@@ -1015,7 +1054,7 @@ function finishDay(){
   const staffNotes=[];
   const moodBonus=hasPerk('mood')?4:0;
   for(const s of g.staff){const work=(g.hours.close-g.hours.open)*60;const ratio=(rt.busy[s.id]||0)/work;
-    const d=Math.round(5+moodBonus-Math.max(0,ratio-.55)*80*(1.2-s.st.en/100));s.mood=clamp(s.mood+d,0,100);s.days++;
+    const d=Math.round(5+moodBonus+((g.uni||{})[s.role]||0)-Math.max(0,ratio-.55)*80*(1.2-s.st.en/100));s.mood=clamp(s.mood+d,0,100);s.days++;
     if(s.days%5===0){const k=pick(['sk','sp','sv','en']);const cap=70+g.lantern*8+s.capJ;const inc=Math.round(rnd(1,4)*(s.perk==='learner'?2:1)*(s.mood>60?1.2:.8));if(s.st[k]<cap){s.st[k]=Math.min(cap,s.st[k]+inc);staffNotes.push(`📈 ${s.name}的${SN[k]} +${inc}`)}}
     if(s.mood<25)staffNotes.push(`😟 ${s.name}很累，心情不好（${s.mood}）`);
     s.lastBusy=Math.round(ratio*100)}
@@ -1052,7 +1091,7 @@ function lanternConds(){
 
 // ================= 聲音 =================
 // ================= 聲音：全部用 Web Audio 即時合成 =================
-const AUD={sfx:true,sfxVol:.7,music:'enka',musicVol:.5,voice:true,voiceLang:'zh'};
+const AUD={sfx:true,sfxVol:.7,music:'enka',musicVol:.5,voice:true,voiceLang:'zh',seasonMusic:true};
 try{Object.assign(AUD,JSON.parse(localStorage.getItem('izakaya-audio')||'{}'))}catch(e){}
 function saveAud(){try{localStorage.setItem('izakaya-audio',JSON.stringify(AUD))}catch(e){}}
 let AC=null,MG=null,SG=null,NOISE=null;
@@ -1083,6 +1122,8 @@ const I={
   taiko:(t,v)=>{osc('sine',95,t,.7,v,MG,{a:.003,fEnd:48});noise(t,.08,v*.5,MG,'lowpass',500)},
   kane:(t,v)=>{osc('square',1760,t,.12,v,MG,{a:.001,filter:{f:4000}});osc('sine',2640,t,.25,v*.6,MG,{a:.001})},
   block:(t,v)=>osc('sine',1500,t,.07,v,MG,{a:.001}),
+  suona:(m,t,v,d=.3)=>{osc('square',mtof(m),t,d,v,MG,{a:.02,vib:1,filter:{type:'bandpass',f:mtof(m)*2,q:1.2}});osc('sawtooth',mtof(m),t,d,v*.5,MG,{a:.02,filter:{f:3000}})},
+  bell:(t,v)=>{osc('sine',196,t,4.5,v,MG,{a:.002});osc('sine',196*2.76,t,2.6,v*.4,MG,{a:.002});osc('sine',196*5.4,t,1.2,v*.2,MG,{a:.002})},
   lead:(m,t,v,d=.3)=>{osc('square',mtof(m),t,d,v,MG,{a:.01,filter:{f:1800}});osc('sawtooth',mtof(m),t,d,v*.4,MG,{a:.01,detune:8,filter:{f:1500}})},
   nylon:(m,t,v)=>{osc('triangle',mtof(m),t,1,v,MG,{a:.002,filter:{f:1800}});osc('sine',mtof(m)*2,t,.4,v*.25,MG,{a:.002})},
   rim:(t,v)=>osc('square',820,t,.035,v,MG,{a:.001,filter:{f:2600}}),
@@ -1140,14 +1181,29 @@ const MUSIC={
       noise(t,.6,.035,MG,'lowpass',1800,.4);if(Math.random()<.3)noise(t+Math.random()*.4,.03,.05,MG,'highpass',4000);
       if(s===0)ch.forEach(m=>I.ep(m,t,.04,3.6));if(s===0)I.bass(ch[0]-12,t,.18,3);
       if([2,5,6].includes(s)&&Math.random()<.4)I.ep(walk(st,[72,74,76,79,81]),t,.06,1.2)}},
+  s_weiya:{label:'尾牙喜慶',season:'weiya',desc:'鑼鼓配上嗩吶般的旋律，熱熱鬧鬧過尾牙。',bpm:124,sub:2,
+    play(n,t,st){const s=n%8;if(s===0||s===4)I.taiko(t,.4);if(s===2||s===6)I.kane(t,.035);if(s%2===1)I.hat(t,.02);
+      if(s%2===0&&Math.random()<.85)I.suona(walk(st,[67,69,72,74,76,79,81]),t,.06,.34);if(n%16===0)[55,62].forEach(m=>I.shami(m,t,.06))}},
+  s_newyear:{label:'除夜之鐘',season:'newyear',desc:'寺廟的鐘聲一聲聲響起，配上安靜的琴聲。',bpm:56,sub:2,
+    play(n,t,st){const s=n%16;if(s===0)I.bell(t,.16);if(s%2===0&&Math.random()<.55)I.koto(walk(st,[62,64,67,69,71,74]),t,.12);if(s===8)I.pad(50,t,.022,3)}},
+  s_sakura:{label:'櫻花櫻花',season:'sakura',desc:'日本童謠〈さくら さくら〉的琴聲版。',bpm:84,sub:2,
+    play(n,t,st){if(st.left==null){st.i=0;st.left=0}
+      if(st.left<=0){const L=SAKURA.length,[m,d]=SAKURA[st.i%L];I.koto(m,t,.17);if(d>=4)I.koto(m-12,t,.06);st.left=d;st.i++;if(st.i%L===0)st.left+=4}
+      st.left--;if(n%16===0)I.pad(57,t,.016,5);if(Math.random()<.04)osc('sine',rnd(2200,3200),t,.6,.012,MG,{a:.002})}},
+  s_natsu:{label:'夏祭盆踊り',season:'natsu',desc:'太鼓、鉦和篠笛的盆踊り節奏，邊聽邊想跳舞。',bpm:132,sub:2,
+    play(n,t,st){const s=n%8;if([1,0,0,1,1,0,1,0][s])I.taiko(t,s===0?.55:.3);if(s%2===1)I.kane(t,.025);
+      if(s%2===0&&Math.random()<.8)I.flute(walk(st,[74,76,79,81,83,86]),t,.08,.45);if(s===0||s===4)I.shami(57,t,.06)}},
   izakaya:{label:'熱鬧店內',desc:'沒有旋律，只有店裡的杯盤聲和客人的談笑聲。',bpm:60,sub:4,
     play(n,t){if(Math.random()<.35)noise(t,rnd(.2,.6),rnd(.01,.03),MG,'bandpass',rnd(300,900),.6);
       if(Math.random()<.08)osc('sine',rnd(2600,3400),t,.15,.02,MG,{a:.001});if(Math.random()<.04)noise(t,.05,.04,MG,'highpass',5000)}},
 };
-const mus={timer:null,next:0,step:0,st:{}};
-function startMusic(){stopMusic();if(AUD.music==='none'||!MUSIC[AUD.music]||!ac())return;mus.step=0;mus.st={};mus.next=AC.currentTime+.15;mus.timer=setInterval(schedMusic,40)}
+const SAKURA=[[69,2],[69,2],[71,4],[69,2],[69,2],[71,4],[69,2],[71,2],[72,2],[71,2],[69,2],[71,1],[69,1],[65,4],[64,2],[60,2],[64,2],[65,2],[64,2],[64,1],[60,1],[59,4],
+  [69,2],[71,2],[72,2],[71,2],[69,2],[71,1],[69,1],[65,4],[64,2],[60,2],[64,2],[65,2],[64,2],[64,1],[60,1],[59,4],[69,2],[69,2],[71,4],[69,2],[69,2],[71,4],[64,2],[65,2],[71,1],[69,1],[65,2],[64,8]];
+const mus={timer:null,next:0,step:0,st:{},track:null,ever:false};
+function wantTrack(){if(AUD.music==='none')return'none';if(AUD.seasonMusic!==false&&g){for(const x of activeSeasons(g.day).reverse()){const k='s_'+x.id;if(MUSIC[k])return k}}return MUSIC[AUD.music]?AUD.music:'none'}
+function startMusic(){stopMusic();mus.ever=true;mus.track=wantTrack();if(mus.track==='none'||!ac())return;mus.step=0;mus.st={};mus.next=AC.currentTime+.15;mus.timer=setInterval(schedMusic,40)}
 function stopMusic(){if(mus.timer)clearInterval(mus.timer);mus.timer=null}
-function schedMusic(){const S=MUSIC[AUD.music];if(!S||!AC)return;const spb=60/S.bpm/S.sub;
+function schedMusic(){const S=MUSIC[mus.track];if(!S||!AC)return;const spb=60/S.bpm/S.sub;
   if(mus.next<AC.currentTime-.5)mus.next=AC.currentTime+.05;
   while(mus.next<AC.currentTime+.25){let t=mus.next;if(S.swing&&mus.step%2)t+=spb*.32;try{S.play(mus.step,t,mus.st)}catch(e){}mus.step++;mus.next+=spb}}
 const SFX={door:'門鈴（客人進門）',cash:'收銀機',pour:'倒啤酒',serve:'上菜',sizzle:'炭火滋滋聲',angry:'客人生氣',levelup:'獲得提燈',open:'開店鑼聲'};
@@ -1182,9 +1238,9 @@ const cv=$('#cv'),ctx=cv.getContext('2d');
 let DPR=1;
 function sizeCanvas(){DPR=Math.min(2,window.devicePixelRatio||1);cv.width=CW*DPR;cv.height=CH*DPR;cv.style.aspectRatio=CW+'/'+CH}
 function rr(x,y,w,h,r){ctx.beginPath();ctx.roundRect?ctx.roundRect(x,y,w,h,r):ctx.rect(x,y,w,h)}
-const FLOORC={concrete:['#8c877d','#857f75'],wood:['#a8774a','#9c6c41'],slate:['#3b3d42','#34363b']};
-const WALLC={white:'#d9d2c3',cedar:'#9b6b3e',bamboo:'#b49a5a',lacquer:'#1f1a17'};
-const NORENC={ai:'#1d3566',aka:'#9e1f1a',kamon:'#2a2340'};
+const FLOORC={concrete:['#8c877d','#857f75'],wood:['#a8774a','#9c6c41'],slate:['#3b3d42','#34363b'],terrazzo:['#bdb7aa','#b6b0a3'],checker:['#8a8f94','#8a8f94']};
+const WALLC={white:'#d9d2c3',cedar:'#9b6b3e',bamboo:'#b49a5a',lacquer:'#1f1a17',brick:'#9a4a32',shoji:'#efe9da'};
+const NORENC={ai:'#1d3566',aka:'#9e1f1a',kamon:'#2a2340',shiro:'#ece6d8',kin:'#1a1a2e'};
 const UNIC={tee:'#1e1e1e',samue:'#24427a',happi:'#b8401f'};
 let frameT=0;
 function draw(){
@@ -1204,18 +1260,22 @@ function draw(){
   // 店內地板
   const fc=FLOORC[g.styles.floor];
   for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){ctx.fillStyle=(x+y)%2?fc[0]:fc[1];ctx.fillRect(OX+x*T,OY+y*T,T,T)}
+  if(g.styles.floor==='checker'){for(let y=0;y<ROWS*2;y++)for(let x=0;x<COLS*2;x++){ctx.fillStyle=(x+y)%2?'#2f3a48':'#e6e0d2';ctx.fillRect(OX+x*T/2,OY+y*T/2,T/2,T/2)}}
+  if(g.styles.floor==='terrazzo'){for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)for(let i=0;i<5;i++){const h=(x*73+y*41+i*29)%97;ctx.fillStyle=['rgba(110,106,98,.45)','rgba(240,236,226,.6)','rgba(138,90,58,.35)','rgba(90,110,98,.35)'][h%4];ctx.beginPath();ctx.arc(OX+x*T+(h*7%T),OY+y*T+(h*13%T),.8+(h%3)*.35,0,7);ctx.fill()}}
   if(g.styles.floor==='wood'){ctx.strokeStyle='rgba(60,35,15,.35)';ctx.lineWidth=1;for(let y=0;y<ROWS*2;y++){ctx.beginPath();ctx.moveTo(OX,OY+y*T/2);ctx.lineTo(OX+COLS*T,OY+y*T/2);ctx.stroke()}}
   // 牆
   ctx.fillStyle=WALLC[g.styles.wall];
   ctx.fillRect(0,0,CW,OY);ctx.fillRect(0,0,OX,OY+ROWS*T+WALLPX);ctx.fillRect(CW-WALLPX,0,WALLPX,OY+ROWS*T+WALLPX);
   ctx.fillRect(0,OY+ROWS*T,PX(DOOR.x)-T/2,WALLPX);ctx.fillRect(PX(DOOR.x)+T/2,OY+ROWS*T,CW,WALLPX);
   if(g.styles.wall==='lacquer'){ctx.strokeStyle='#5a4a3a';ctx.lineWidth=1;for(let x=0;x<CW;x+=10){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,OY);ctx.stroke()}}
+  if(g.styles.wall==='brick'){ctx.strokeStyle='rgba(235,220,200,.55)';ctx.lineWidth=1;for(let y=0;y<OY;y+=5){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(CW,y);ctx.stroke();for(let x=(y/5%2)*7;x<CW;x+=14){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+5);ctx.stroke()}}}
+  if(g.styles.wall==='shoji'){ctx.strokeStyle='#8a6a42';ctx.lineWidth=1.2;for(let x=0;x<CW;x+=12){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,OY);ctx.stroke()}ctx.beginPath();ctx.moveTo(0,OY/2);ctx.lineTo(CW,OY/2);ctx.stroke()}
   if(g.styles.wall==='bamboo'){ctx.strokeStyle='#8a7440';for(let x=0;x<CW;x+=7){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,OY);ctx.stroke()}}
   // 暖簾（門口）
   const dx=PX(DOOR.x)-T/2,dy=OY+ROWS*T;
   ctx.fillStyle=NORENC[g.styles.noren];for(let i=0;i<3;i++){rr(dx+i*(T/3)+1,dy-4,T/3-2,WALLPX+14,2);ctx.fill()}
   ctx.fillStyle='#f3efe6';ctx.font='900 11px "Noto Serif TC",serif';ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText(g.styles.noren==='kamon'?'◎':'酒',dx+T/2,dy+6);
+  ctx.fillStyle=g.styles.noren==='shiro'?'#2a2a2a':g.styles.noren==='kin'?'#d4a72c':'#f3efe6';ctx.fillText(g.styles.noren==='kamon'||g.styles.noren==='kin'?'◎':'酒',dx+T/2,dy+6);
   // 門口燈箱、外面提燈
   ctx.fillStyle='#fff3c4';if(g.sign){rr(dx-36,sy+6,26,30,3);ctx.fill();ctx.fillStyle='#7a1a12';ctx.font='900 12px serif';ctx.fillText('居',dx-23,sy+15);ctx.fillText('酒',dx-23,sy+28)}
   drawLantern(dx-6,sy+4,1);drawLantern(dx+T+6,sy+4,1);
@@ -1224,6 +1284,11 @@ function draw(){
   // 浮世繪、大漁旗、木牌
   const uk=Math.min(g.wall.ukiyoe||0,3);for(let i=0;i<uk;i++){const x=OX+T*(12)+i*20;ctx.fillStyle='#2b1d12';ctx.fillRect(x,2,16,12);ctx.fillStyle='#3f6aa0';ctx.fillRect(x+2,4,12,8);ctx.fillStyle='#f1ede4';ctx.beginPath();ctx.arc(x+10,8,3,Math.PI,0);ctx.fill()}
   const fl=Math.min(g.wall.flag||0,2);for(let i=0;i<fl;i++){const y=OY+T*(3+i*2.5);ctx.fillStyle='#d23a2a';ctx.fillRect(CW-WALLPX,y,WALLPX,30);ctx.fillStyle='#f5d33a';ctx.fillRect(CW-WALLPX,y+10,WALLPX,10);ctx.fillStyle='#1c58a8';ctx.fillRect(CW-WALLPX,y+20,WALLPX,10)}
+  for(let i=0;i<Math.min(g.wall.daruma||0,2);i++){const x=CW-WALLPX/2,y=OY+T*6.3+i*26;ctx.fillStyle='#c4271c';ctx.beginPath();ctx.ellipse(x,y,8,9,0,0,7);ctx.fill();ctx.fillStyle='#f4efe2';ctx.beginPath();ctx.ellipse(x,y-2,4.5,3.5,0,0,7);ctx.fill();ctx.fillStyle='#111';ctx.beginPath();ctx.arc(x-1.6,y-2,.9,0,7);ctx.arc(x+1.6,y-2,.9,0,7);ctx.fill()}
+  for(let i=0;i<Math.min(g.wall.scroll||0,2);i++){const x=1,y=OY+T*(3.3+i*2.2);ctx.fillStyle='#5a3a22';ctx.fillRect(x,y-2,14,2);ctx.fillRect(x,y+44,14,2);ctx.fillStyle='#f4efe2';ctx.fillRect(x+1,y,12,44);ctx.fillStyle='#1a1a1a';ctx.font='900 9px "Noto Serif TC",serif';ctx.textAlign='center';ctx.textBaseline='middle';['一','期','一','會'].forEach((c2,k)=>ctx.fillText(i?['乾','杯','萬','歲'][k]:c2,x+7,y+6+k*10.5))}
+  if(g.wall.mask){const x=CW-WALLPX/2,y=OY+T*4.4;ctx.fillStyle='#fbf8f0';ctx.beginPath();ctx.ellipse(x,y,7,8,0,0,7);ctx.fill();ctx.beginPath();ctx.moveTo(x-7,y-3);ctx.lineTo(x-5,y-12);ctx.lineTo(x-2,y-6);ctx.moveTo(x+7,y-3);ctx.lineTo(x+5,y-12);ctx.lineTo(x+2,y-6);ctx.fill();ctx.strokeStyle='#c4271c';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x-5,y-1);ctx.lineTo(x-2,y);ctx.moveTo(x+5,y-1);ctx.lineTo(x+2,y);ctx.stroke();ctx.fillStyle='#c4271c';ctx.beginPath();ctx.arc(x,y+4,1.2,0,7);ctx.fill()}
+  if(g.wall.tanzaku){for(let i=0;i<3;i++){ctx.fillStyle=['#f4efe2','#f2d36b','#e8a0a0'][i];ctx.fillRect(1+i*5,OY+T*7.6,4,28)}}
+  if(g.wall.neon){const nx=PX(DOOR.x)+T*1.6,ny=OY+ROWS*T+WALLPX+6,fl=Math.sin(frameT*.31)>-.95?1:.3;ctx.save();ctx.shadowColor='rgba(255,90,170,.9)';ctx.shadowBlur=12*fl;ctx.strokeStyle=`rgba(255,120,190,${fl})`;ctx.lineWidth=2;rr(nx,ny,58,20,5);ctx.stroke();ctx.fillStyle=`rgba(255,160,210,${fl})`;ctx.font='900 12px "Noto Serif TC",serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('居酒屋',nx+29,ny+10.5);ctx.restore()}
   if(g.wall.board){ctx.fillStyle='#c9a46a';for(let i=0;i<5;i++)ctx.fillRect(OX+T*11.2+i*6,1,5,OY-2)}
   // 廚房：炭火台、爐台、油炸鍋、備料台、洗碗槽、出餐口
   const kx=OX+KIT.x*T,ky=OY+KIT.y*T;
@@ -1327,7 +1392,7 @@ function draw(){
   if(rt){ctx.fillStyle='rgba(15,20,35,.86)';rr(CW-120,4,114,32,6);ctx.fill();ctx.fillStyle='#fff';ctx.font='900 18px sans-serif';ctx.textAlign='center';ctx.fillText((rt.closed?'打烊 ':'營業 ')+hhmm(rt.t),CW-63,20.5)}
   else{ctx.fillStyle='rgba(15,20,35,.86)';rr(CW-150,4,144,32,6);ctx.fill();ctx.fillStyle='#fff';ctx.font='900 16px sans-serif';ctx.textAlign='center';ctx.fillText('準備中・'+String(g.hours.open).padStart(2,'0')+':00 開店',CW-78,20.5)}
 }
-function drawLantern(x,y,s){const fl=.85+.15*Math.sin(frameT*.07+x);ctx.save();ctx.translate(x,y);ctx.scale(s,s);const gl=ctx.createRadialGradient(0,6,2,0,6,26);gl.addColorStop(0,`rgba(255,170,60,${.45*fl})`);gl.addColorStop(1,'rgba(255,170,60,0)');ctx.fillStyle=gl;ctx.beginPath();ctx.arc(0,6,26,0,7);ctx.fill();ctx.fillStyle='#c4271c';ctx.beginPath();ctx.ellipse(0,6,8,11,0,0,7);ctx.fill();ctx.fillStyle='#1b1b1b';ctx.fillRect(-5,-6,10,3);ctx.fillRect(-5,16,10,3);ctx.fillStyle='#fff3d6';ctx.font='900 8px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('酒',0,7);ctx.restore()}
+function drawLantern(x,y,s,col){const fl=.85+.15*Math.sin(frameT*.07+x);ctx.save();ctx.translate(x,y);ctx.scale(s,s);const gl=ctx.createRadialGradient(0,6,2,0,6,26);gl.addColorStop(0,`rgba(255,170,60,${.45*fl})`);gl.addColorStop(1,'rgba(255,170,60,0)');ctx.fillStyle=gl;ctx.beginPath();ctx.arc(0,6,26,0,7);ctx.fill();ctx.fillStyle=col||'#c4271c';ctx.beginPath();ctx.ellipse(0,6,8,11,0,0,7);ctx.fill();ctx.fillStyle='#1b1b1b';ctx.fillRect(-5,-6,10,3);ctx.fillRect(-5,16,10,3);ctx.fillStyle='#fff3d6';ctx.font='900 8px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('酒',0,7);ctx.restore()}
 function drawFurn(o){
   const f=FURN[o.kind],fp=footprint(o),x0=OX+o.x*T,y0=OY+o.y*T,w=(o.rot?f.h:f.w)*T,h=(o.rot?f.w:f.h)*T;
   const sel=ui.edit&&ui.sel&&ui.sel.uid===o.uid;
@@ -1358,6 +1423,27 @@ function drawFurn(o){
   else if(o.kind==='taru'){ctx.fillStyle='#d8c690';ctx.beginPath();ctx.arc(x0+T/2,y0+T/2,15,0,7);ctx.fill();ctx.strokeStyle='#5a3a22';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x0+T/2,y0+T/2,15,0,7);ctx.stroke();ctx.fillStyle='#b0241c';ctx.font='900 12px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('酒',x0+T/2,y0+T/2)}
   else if(o.kind==='fridge'){ctx.fillStyle='#2b2f36';ctx.fillRect(x0+4,y0+3,T-8,T-6);ctx.fillStyle='#8fd0ff55';ctx.fillRect(x0+7,y0+6,T-14,T-12);for(let i=0;i<3;i++){ctx.fillStyle=['#2d6b3a','#7a3b1f','#d9c37a'][i];ctx.fillRect(x0+10+i*7,y0+10,4,18)}}
   else if(o.kind==='garden'){ctx.fillStyle='#e8e2d2';ctx.fillRect(x0+2,y0+2,w-4,h-4);ctx.strokeStyle='#bdb5a0';ctx.lineWidth=1;for(let i=1;i<8;i++){ctx.beginPath();ctx.arc(x0+w*.35,y0+h*.4,i*5,0,7);ctx.stroke()}ctx.fillStyle='#555';ctx.beginPath();ctx.ellipse(x0+w*.35,y0+h*.4,9,6,0,0,7);ctx.fill();ctx.beginPath();ctx.ellipse(x0+w*.72,y0+h*.7,6,4,0,0,7);ctx.fill();ctx.fillStyle='#2f6b35';ctx.beginPath();ctx.arc(x0+w*.8,y0+h*.22,8,0,7);ctx.fill()}
+  else if(o.kind==='lamp'){const cx=x0+T/2,cy=y0+T/2;const gl=ctx.createRadialGradient(cx,cy-4,2,cx,cy-4,24);gl.addColorStop(0,'rgba(255,214,140,.55)');gl.addColorStop(1,'rgba(255,214,140,0)');ctx.fillStyle=gl;ctx.beginPath();ctx.arc(cx,cy-4,24,0,7);ctx.fill();
+    ctx.fillStyle='#5a3a22';ctx.fillRect(cx-1.5,cy+4,3,13);ctx.fillRect(cx-6,cy+15,12,3);ctx.fillStyle='#fbf1d8';rr(cx-8,cy-16,16,21,5);ctx.fill();ctx.strokeStyle='#c9a46a';ctx.lineWidth=1;for(let i=1;i<4;i++){ctx.beginPath();ctx.moveTo(cx-8,cy-16+i*5.2);ctx.lineTo(cx+8,cy-16+i*5.2);ctx.stroke()}}
+  else if(o.kind==='tanuki'){const cx=x0+T/2,by=y0+T-3;ctx.fillStyle='rgba(0,0,0,.25)';ctx.beginPath();ctx.ellipse(cx,by,12,3,0,0,7);ctx.fill();
+    ctx.fillStyle='#7a5434';ctx.beginPath();ctx.ellipse(cx,by-10,11,11,0,0,7);ctx.fill();ctx.fillStyle='#e6cfa6';ctx.beginPath();ctx.ellipse(cx,by-8,7,7.5,0,0,7);ctx.fill();
+    ctx.fillStyle='#7a5434';ctx.beginPath();ctx.arc(cx,by-25,8,0,7);ctx.fill();ctx.fillStyle='#e6cfa6';ctx.beginPath();ctx.ellipse(cx,by-23,4.5,3.2,0,0,7);ctx.fill();
+    ctx.fillStyle='#2a1a10';ctx.beginPath();ctx.ellipse(cx-3.4,by-26,2.2,1.6,0,0,7);ctx.ellipse(cx+3.4,by-26,2.2,1.6,0,0,7);ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(cx-3,by-26.4,.6,0,7);ctx.arc(cx+3.8,by-26.4,.6,0,7);ctx.fill();
+    ctx.fillStyle='#c8a050';ctx.beginPath();ctx.moveTo(cx-13,by-30);ctx.lineTo(cx,by-38);ctx.lineTo(cx+13,by-30);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#e8e0cc';rr(cx+8,by-17,6,10,2);ctx.fill();ctx.fillStyle='#2d4f8a';ctx.fillRect(cx+8,by-14,6,2)}
+  else if(o.kind==='bonsai'){const cx=x0+T/2,by=y0+T-4;ctx.fillStyle='#2d4f8a';rr(cx-11,by-8,22,8,2);ctx.fill();ctx.strokeStyle='#5a3a22';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(cx,by-8);ctx.quadraticCurveTo(cx-8,by-16,cx+2,by-22);ctx.quadraticCurveTo(cx+8,by-26,cx+4,by-30);ctx.stroke();
+    ctx.fillStyle='#2e5a2e';for(const[a,b2,r]of[[-9,-20,7],[7,-24,7],[0,-32,6],[-2,-25,5]]){ctx.beginPath();ctx.ellipse(cx+a,by+b2,r+3,r*.7,0,0,7);ctx.fill()}}
+  else if(o.kind==='parasol'){const cx=x0+T/2,cy=y0+T/2;ctx.fillStyle='rgba(0,0,0,.2)';ctx.beginPath();ctx.ellipse(cx+3,cy+4,19,17,0,0,7);ctx.fill();ctx.fillStyle='#c4271c';ctx.beginPath();ctx.arc(cx,cy,18,0,7);ctx.fill();
+    ctx.strokeStyle='rgba(255,220,200,.6)';ctx.lineWidth=1;for(let i=0;i<12;i++){ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(i*Math.PI/6)*18,cy+Math.sin(i*Math.PI/6)*18);ctx.stroke()}ctx.fillStyle='#8a1a12';ctx.beginPath();ctx.arc(cx,cy,3,0,7);ctx.fill()}
+  else if(o.kind==='sakeWall'){ctx.fillStyle='#3a2414';rr(x0+3,y0+6,w-6,h-10,3);ctx.fill();for(let r=0;r<2;r++)for(let i=0;i<9;i++){const bx2=x0+8+i*8,by2=y0+10+r*14;ctx.fillStyle=['#2d6b3a','#6b3a1f','#cfd8dc','#2d4f8a'][(i+r)%4];rr(bx2,by2,6,12,2);ctx.fill();ctx.fillStyle='#f4efe2';ctx.fillRect(bx2+1,by2+5,4,4)}}
+  else if(o.kind==='tank'){ctx.fillStyle='#2b2f36';rr(x0+3,y0+5,w-6,h-9,3);ctx.fill();ctx.fillStyle='#3d7fb0';rr(x0+6,y0+8,w-12,h-15,2);ctx.fill();
+    for(let i=0;i<4;i++){const fx=x0+10+((frameT*(.3+i*.1)+i*20)%(w-22)),fy=y0+13+i*5;ctx.fillStyle=i%2?'#d0d8e0':'#e07a2a';ctx.beginPath();ctx.ellipse(fx,fy,4,2,0,0,7);ctx.fill();ctx.beginPath();ctx.moveTo(fx-4,fy);ctx.lineTo(fx-7,fy-2);ctx.lineTo(fx-7,fy+2);ctx.fill()}
+    for(let i=0;i<3;i++){const ph=(frameT*.5+i*20)%30;ctx.strokeStyle='rgba(255,255,255,.6)';ctx.beginPath();ctx.arc(x0+w-12,y0+h-10-ph,1.2,0,7);ctx.stroke()}}
+  else if(o.kind==='ishidoro'){const cx=x0+T/2,by=y0+T-3;ctx.fillStyle='rgba(0,0,0,.25)';ctx.beginPath();ctx.ellipse(cx,by,12,3,0,0,7);ctx.fill();ctx.fillStyle='#8f8b84';rr(cx-9,by-6,18,6,2);ctx.fill();ctx.fillRect(cx-3,by-16,6,10);rr(cx-8,by-26,16,10,2);ctx.fill();
+    ctx.fillStyle='rgba(255,200,110,.9)';ctx.fillRect(cx-4,by-24,8,6);ctx.fillStyle='#77736c';ctx.beginPath();ctx.moveTo(cx-13,by-26);ctx.lineTo(cx,by-35);ctx.lineTo(cx+13,by-26);ctx.closePath();ctx.fill();ctx.fillStyle='#8f8b84';ctx.beginPath();ctx.arc(cx,by-36,2.5,0,7);ctx.fill()}
+  else if(o.kind==='koi'){const cx=x0+w/2,cy=y0+h/2;ctx.fillStyle='#8f8b84';ctx.beginPath();ctx.ellipse(cx,cy,w/2-2,h/2-2,0,0,7);ctx.fill();ctx.fillStyle='#1f4f6e';ctx.beginPath();ctx.ellipse(cx,cy,w/2-8,h/2-8,0,0,7);ctx.fill();
+    for(let i=0;i<4;i++){const a=frameT*.02*(i%2?1:-1)+i*1.6,fx=cx+Math.cos(a)*(w/4),fy=cy+Math.sin(a)*(h/5);ctx.save();ctx.translate(fx,fy);ctx.rotate(a+(i%2?Math.PI/2:-Math.PI/2));ctx.fillStyle=['#f07a2a','#f4f1ea','#d23a2a','#f2c94c'][i];ctx.beginPath();ctx.ellipse(0,0,6,2.6,0,0,7);ctx.fill();ctx.beginPath();ctx.moveTo(-6,0);ctx.lineTo(-9,-2.5);ctx.lineTo(-9,2.5);ctx.fill();ctx.restore()}
+    ctx.fillStyle='#4f8a3a';ctx.beginPath();ctx.arc(cx+w/5,cy-h/6,5,.3,Math.PI*2-.3);ctx.lineTo(cx+w/5,cy-h/6);ctx.fill()}
   if(sel){ctx.strokeStyle='#ffd34d';ctx.lineWidth=3;ctx.strokeRect(x0+1,y0+1,w-2,h-2)}
 }
 // ---- 人物（俯視寫實風）：正面朝 +y，再依朝向旋轉 ----
@@ -1382,9 +1468,10 @@ const INSPECTOR_LOOK={skin:'#e8c09c',hairC:'#241912',hair:'crop',style:'suit',bo
 function staffLook(s){
   if(!s.look)s.look={skin:pick(SKIN),hairC:s.hair||pick(HAIRC.slice(0,6)),hair:pick(HAIRS)};
   const L={...s.look};
-  if(s.role==='chef'){L.body='#f6f5f0';L.style='chef'}
-  else if(s.role==='bar'){L.body='#f2f1ec';L.style='plain'}
-  else{L.body=UNIC[g.styles.uniform];L.style='plain';L.apron=g.styles.uniform==='tee'?'#6b4528':'#22201e'}
+  const u=g.uni||{hall:0,chef:0,bar:0};
+  if(s.role==='chef'){const U=UNIFORMS.chef[u.chef||0];L.body='#f6f5f0';L.style='chef';L.uApron=U.apron;L.crest=U.crest;L.gold=U.gold}
+  else if(s.role==='bar'){const U=UNIFORMS.bar[u.bar||0];L.body=U.haori?'#1c1c1e':'#f2f1ec';L.style='plain';L.uTie=U.tie;L.gold=U.gold;L.haori=U.haori}
+  else{const U=UNIFORMS.hall[u.hall||0];L.body=U.body;L.style='plain';L.apron=U.apron;L.obi=U.obi}
   return L;
 }
 function shade(hex,amt){const n=parseInt(hex.slice(1),16);let r=n>>16,gg=n>>8&255,b=n&255;const f=amt<0?0:255,t=Math.abs(amt);r=Math.round(r+(f-r)*t);gg=Math.round(gg+(f-gg)*t);b=Math.round(b+(f-b)*t);return`rgb(${r},${gg},${b})`}
@@ -1424,14 +1511,21 @@ function drawChar(x,y,dir,L,o={}){
   if(!back){
     if(L.style==='suit'){ctx.fillStyle='#f2f1ec';ctx.beginPath();if(side){ctx.moveTo(bw/2-3.2,top+.4);ctx.lineTo(bw/2,top+.4);ctx.lineTo(bw/2-.4,top+6)}else{ctx.moveTo(-3.6,top+.3);ctx.lineTo(3.6,top+.3);ctx.lineTo(0,top+7.5)}ctx.closePath();ctx.fill();
       if(L.tie&&!side){ctx.fillStyle=L.tie;ctx.beginPath();ctx.moveTo(-1,top+1);ctx.lineTo(1,top+1);ctx.lineTo(1.4,top+7);ctx.lineTo(0,top+8.4);ctx.lineTo(-1.4,top+7);ctx.closePath();ctx.fill()}}
-    if(L.style==='chef'&&!side){ctx.fillStyle='#b9b9b1';for(const yy of[3,6.5,10]){ctx.beginPath();ctx.arc(-2.6,top+yy,.8,0,7);ctx.arc(2.6,top+yy,.8,0,7);ctx.fill()}}
+    if(L.uApron){ctx.fillStyle=L.uApron;rr(side?-2:-6,top+6.5,side?7:12,bh-6.5+(o.seated?0:3),2);ctx.fill()}
+    if(L.crest&&!side){ctx.fillStyle='#b0241c';ctx.beginPath();ctx.arc(-4,top+3.2,1.6,0,7);ctx.fill()}
+    if(L.style==='chef'&&!side){ctx.fillStyle=L.gold?'#d4a72c':'#b9b9b1';for(const yy of[3,6.5,10]){ctx.beginPath();ctx.arc(-2.6,top+yy,.8,0,7);ctx.arc(2.6,top+yy,.8,0,7);ctx.fill()}}
     if(L.style==='hoodie'){ctx.strokeStyle=shade(body,-.3);ctx.lineWidth=1.6;ctx.beginPath();ctx.arc(side?2:0,top+.5,side?3:5,0,Math.PI);ctx.stroke();if(!side){ctx.strokeStyle='#e8e4da';ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(-1.6,top+3);ctx.lineTo(-1.6,top+6.5);ctx.moveTo(1.6,top+3);ctx.lineTo(1.6,top+6.5);ctx.stroke()}}
     if(o.role==='bar'){ctx.fillStyle='#1c1c1e';if(side){rr(-bw/2,top,bw*.7,bh,4);ctx.fill()}else{rr(-bw/2,top,bw*.36,bh,4);ctx.fill();rr(bw/2-bw*.36,top,bw*.36,bh,4);ctx.fill();ctx.fillStyle='#7a1f2a';ctx.fillRect(-1.8,top+.5,3.6,1.7)}}
-    if(o.role==='hall'){ctx.fillStyle=L.apron;rr(side?-1:-6,top+5.5,side?7:12,bh-5.5+(o.seated?0:4),2);ctx.fill()}
+    if(L.obi){ctx.fillStyle='#d4a72c';rr(-bw/2,top+7,bw,2.8,1);ctx.fill()}
+    if(o.role==='bar'&&L.haori&&!side){ctx.fillStyle='#f2f1ec';ctx.beginPath();ctx.moveTo(-3.4,top+.3);ctx.lineTo(3.4,top+.3);ctx.lineTo(0,top+7);ctx.closePath();ctx.fill()}
+    if(o.role==='bar'&&L.uTie&&!side){ctx.fillStyle=L.uTie;ctx.beginPath();ctx.moveTo(0,top+1.6);ctx.lineTo(-3,top);ctx.lineTo(-3,top+3.2);ctx.closePath();ctx.moveTo(0,top+1.6);ctx.lineTo(3,top);ctx.lineTo(3,top+3.2);ctx.closePath();ctx.fill()}
+    if(o.role==='bar'&&L.gold&&!side){ctx.fillStyle='#d4a72c';for(const yy of[5,8,11]){ctx.beginPath();ctx.arc(0,top+yy,.9,0,7);ctx.fill()}}
+    if(o.role==='hall'&&L.apron){ctx.fillStyle=L.apron;rr(side?-1:-6,top+5.5,side?7:12,bh-5.5+(o.seated?0:4),2);ctx.fill()}
     if(L.bag&&!side){ctx.strokeStyle=shade(L.bag,-.2);ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(-4.5,top+.5);ctx.lineTo(-4.5,top+8);ctx.moveTo(4.5,top+.5);ctx.lineTo(4.5,top+8);ctx.stroke()}
   }else{
     if(L.bag){ctx.fillStyle=L.bag;rr(-5.5,top+1.5,11,10,3);ctx.fill();ctx.fillStyle=shade(L.bag,.15);rr(-3.5,top+6,7,4,1.5);ctx.fill()}
-    if(o.role==='hall'){ctx.strokeStyle=L.apron;ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(-bw/2,top+7);ctx.lineTo(bw/2,top+7);ctx.stroke();ctx.fillStyle=L.apron;ctx.beginPath();ctx.ellipse(-2,top+7,2,1.3,0,0,7);ctx.ellipse(2,top+7,2,1.3,0,0,7);ctx.fill()}
+    if(L.obi){ctx.fillStyle='#d4a72c';rr(-bw/2,top+7,bw,2.8,1);ctx.fill()}
+    if(o.role==='hall'&&L.apron){ctx.strokeStyle=L.apron;ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(-bw/2,top+7);ctx.lineTo(bw/2,top+7);ctx.stroke();ctx.fillStyle=L.apron;ctx.beginPath();ctx.ellipse(-2,top+7,2,1.3,0,0,7);ctx.ellipse(2,top+7,2,1.3,0,0,7);ctx.fill()}
     if(L.style==='hoodie'){ctx.fillStyle=shade(body,-.2);rr(-5,top,10,5,3);ctx.fill()}
   }
   // 端東西、坐著時的手
@@ -1851,7 +1945,7 @@ function pruneMenu(){
   return out}
 function viewShop(){
   const tab=ui.shopTab;
-  const tabs=[['furn','桌椅'],['deco','擺飾'],['style','裝潢'],['equip','設備'],['kitchen','廚房']];
+  const tabs=[['furn','桌椅'],['deco','擺飾'],['style','裝潢'],['season','季節佈置'],['uni','制服'],['equip','設備'],['kitchen','廚房']];
   let h=`<div class="row" style="flex-wrap:wrap"><div class="subtabs">${tabs.map(([k,l])=>`<button class="btn small ${tab===k?'on':''}" data-stab="${k}">${l}</button>`).join('')}</div><b>資金 ${fmt(g.cash)}・環境分 ${envScore()}</b></div>`;
   const lockTxt=L=>`需要 ${'🏮'.repeat(L)}`;
   const card=(title,desc,cost,act,lock,owned)=>`<div class="card"><h3>${title}</h3><div>${desc}</div><div class="row"><b class="num">${fmt(cost)}</b>${lock?`<span class="chip r">${lock}</span>`:owned?`<span class="chip g">${owned}</span>`:''}</div><button class="btn small primary" ${act} ${lock||cost>g.cash?'disabled':''}>購買</button></div>`;
@@ -1861,9 +1955,14 @@ function viewShop(){
     h+='</div><div class="muted">桌椅和落地擺飾買了會先放進倉庫，到「🪑 擺設」放到店裡。</div>';
   }
   if(tab==='style'){
-    const nm={floor:'地板',wall:'牆面',noren:'暖簾',uniform:'員工制服'};
+    const nm={floor:'地板',wall:'牆面',noren:'暖簾'};
     for(const grp of Object.keys(STYLES)){h+=`<div class="sec">${nm[grp]}</div><div class="grid">`+Object.entries(STYLES[grp]).map(([k,s])=>{const cur=g.styles[grp]===k;const owned=(g.owned||{})[grp+':'+k]||s.cost===0;return`<div class="card ${cur?'sel':''}"><h3>${s.label}</h3><div>環境 +${s.env}</div><div class="row"><b class="num">${owned?'已擁有':fmt(s.cost)}</b>${s.L>g.lantern?`<span class="chip r">${lockTxt(s.L)}</span>`:''}</div><button class="btn small ${cur?'on':'primary'}" data-style="${grp}:${k}" ${cur||s.L>g.lantern||(!owned&&s.cost>g.cash)?'disabled':''}>${cur?'使用中':owned?'換上':'購買並換上'}</button></div>`}).join('')+'</div>'}
   }
+  if(tab==='season'){h+='<div class="muted">買一次就是你的，季節到了自動擺出來、加環境分，季節過了會自動收起來。</div><div class="grid">'+SEASON_DECO.map(x=>{const se=SEASON_BY[x.season];const own=g.sdeco[x.id];const on=seasonOn(x.season);
+      return`<div class="card ${own?'sel':''}"><h3>${se.icon} ${x.label}</h3><div>${se.label}（${se.from.join('/')}–${se.to.join('/')}）期間擺出來，環境 +${x.env}。${on?'<b>現在就是這個季節。</b>':''}</div><div class="row"><b class="num">${own?'已擁有':fmt(x.cost)}</b></div>${own?'':`<button class="btn small primary" data-sdeco="${x.id}" ${x.cost>g.cash?'disabled':''}>購買</button>`}</div>`}).join('')+'</div>'}
+  if(tab==='uni'){const rn={hall:'🙇 外場',chef:'🔪 料理人',bar:'🍶 吧台手'};
+    h+='<div class="muted">制服要一級一級升級。等級越高，環境分越高，那個職位的員工每天心情也會多加一點；外場制服還會讓客人覺得服務更體面。</div><div class="grid">'+Object.keys(UNIFORMS).map(r=>{const cur=g.uni[r]||0,TT=UNIFORMS[r],nx=TT[cur+1];
+      return`<div class="card"><h3>${rn[r]}</h3>${TT.map((u,i)=>`<div class="row"><span>${i<=cur?'✅':'⬜'} 第 ${i+1} 級・${u.label}</span><span class="muted">環境 +${u.env}</span></div>`).join('')}${nx?`<div class="row"><b class="num">${fmt(nx.cost)}</b>${nx.L>g.lantern?`<span class="chip r">${lockTxt(nx.L)}</span>`:''}</div><button class="btn small primary" data-uni="${r}" ${nx.L>g.lantern||nx.cost>g.cash?'disabled':''}>升級成「${nx.label}」</button>`:'<span class="chip g">已經是最高級</span>'}</div>`}).join('')+'</div>'}
   if(tab==='equip'){h+='<div class="grid">'+Object.entries(EQUIP).map(([k,e])=>g.equip[k]?`<div class="card sel"><h3>${e.label}</h3><div>${e.desc}</div><span class="chip g">已安裝</span></div>`:card(e.label,e.desc,e.cost,`data-buy="equip:${k}"`,e.L>g.lantern?lockTxt(e.L):'','')).join('')+'</div>'}
   if(tab==='kitchen'){h+='<div class="grid">'+KITCHEN.map((k,i)=>i<=g.kitchen?`<div class="card ${i===g.kitchen?'sel':''}"><h3>${k.label}</h3><div>可容納 ${k.cap} 位料理人${i?`・菜單上限 +${i*3} 道`:''}</div><span class="chip g">${i===g.kitchen?'目前':'已升級'}</span></div>`:card(k.label,`可容納 ${k.cap} 位料理人・菜單上限 +${i*3} 道`,k.cost,`data-buy="kitchen:${i}"`,k.L>g.lantern?lockTxt(k.L):(i>g.kitchen+1?'先升級前一級':''),'')).join('')+'</div>'}
   sheet('🛒 商店',h)}
@@ -1905,6 +2004,7 @@ function viewHelp(){
   <div><div class="sec">提燈評鑑</div><p style="margin:4px 0">前一天的數字達到條件，評鑑員隔天就會扮成獨自用餐的客人來店（第一盞燈要滿意度 80、第二盞 83、第三盞 87）。拿到燈可以上架更多菜、請更多外場、買更高級的裝潢。條件在「📊 店舖資料」。</p></div>
   <div><div class="sec">錢</div><p style="margin:4px 0">每天要付租金、薪水、水電瓦斯和食材。資金連續 3 晚打烊後都是負的，店就收了。起步時少請人、少買東西，先把口碑做起來。</p></div>
   <div><div class="sec">快捷鍵</div><p style="margin:4px 0">空白鍵：暫停／繼續。1、2、4、8：切換速度。Esc：關閉視窗。擺設模式按 R 轉向。</p></div>
+  <div><div class="sec">裝潢、季節佈置與制服</div><p style="margin:4px 0">「🛒 商店」有桌椅、落地擺設、牆面裝飾、地板牆面暖簾、季節佈置和制服。季節佈置買一次就好，季節到了自動擺出來；制服分四級，要一級一級升，等級越高環境分越高、員工心情也越好。</p></div>
   <div><div class="sec">打掃</div><p style="margin:4px 0">客人越多廁所越髒，太髒客人會抱怨、衛生稽查也會扣分；客人離開後地上會有灑出的酒和菜渣。外場有空時會自己去洗廁所、掃地，打烊後也要把店裡收拾乾淨才算收工。收回廚房的碗盤，料理人有空時會去洗。</p></div>
   <div><div class="sec">菜單上限與套餐</div><p style="margin:4px 0">菜單上限看燈數，升級廚房每級 +3 道、買「今日推薦黑板」+2 道。菜單裡會顯示每道菜昨天賣幾份、丟掉幾份和毛利排名，也有「下架賣不好的」「依客層推薦上架」可以一鍵整理。「🍶 套餐」分頁可以開放飲み放題和宴會套餐：客人付固定價錢，喝得多、店裡也更忙。</p></div>
   <div><div class="sec">二號店</div><p style="margin:4px 0">拿到三盞燈後，可以在「🏬 分店」花 $500,000 到另一個地點開二號店。兩家店共用資金，每天一起開店、一起結算；畫面上方可以切換要看哪一家，員工也能互相調派。</p></div>
@@ -1913,7 +2013,11 @@ function viewHelp(){
   <div class="muted">這是向經典餐廳經營遊戲致敬的同人小品。人物、店家、事件都是虛構的。</div>`)}
 function viewSound(){
   sheet('🎵 音樂與音效',`<div class="sec">背景音樂</div>
-  <div class="grid">${Object.entries(MUSIC).map(([k,m])=>`<button class="opt ${AUD.music===k?'sel':''}" data-music="${k}"><b>${AUD.music===k&&k!=='none'?'▶ ':''}${m.label}</b><br><span>${m.desc}</span></button>`).join('')}</div>
+  <div class="grid">${Object.entries(MUSIC).filter(([k,m])=>!m.season).map(([k,m])=>`<button class="opt ${AUD.music===k?'sel':''}" data-music="${k}"><b>${mus.track===k&&k!=='none'?'▶ ':''}${m.label}</b><br><span>${m.desc}</span></button>`).join('')}</div>
+  <div class="sec">季節音樂</div>
+  <div class="row"><span>季節活動期間自動換成季節音樂${g&&activeSeasons(g.day).length?`（現在是${activeSeasons(g.day).map(x=>x.label).join('、')}）`:''}</span><button class="btn small ${AUD.seasonMusic!==false?'on':''}" data-act="seasonMusic">${AUD.seasonMusic!==false?'開':'關'}</button></div>
+  <div class="grid">${Object.entries(MUSIC).filter(([k,m])=>m.season).map(([k,m])=>{const se=SEASON_BY[m.season];return`<button class="opt ${AUD.music===k?'sel':''}" data-music="${k}"><b>${mus.track===k?'▶ ':''}${se.icon} ${m.label}</b><br><span>${m.desc}（${se.label} ${se.from.join('/')}–${se.to.join('/')}）</span></button>`}).join('')}</div>
+  <div class="muted">按季節音樂可以先聽；想一直聽同一首，就把上面的自動換季關掉。</div>
   <label class="f" for="volM">音樂音量<input type="range" id="volM" data-vol="musicVol" min="0" max="1" step="0.05" value="${AUD.musicVol}"></label>
   <div class="sec">音效</div>
   <div class="row"><span>店內音效（門鈴、收銀機、倒酒、炭火……）</span><button class="btn small ${AUD.sfx?'on':''}" data-act="sfxToggle">${AUD.sfx?'開':'關'}</button></div>
@@ -1974,15 +2078,21 @@ function viewAch(){
   h+=`<div class="sec">🎌 季節活動</div><div class="grid">${SEASONS.map(se=>{const on=seasonOn(se.id,S.day);return`<div class="card ${on?'sel':''}"><h3>${se.icon} ${se.label}</h3><div>${se.from.join('/')}–${se.to.join('/')}${on?'・<b>進行中</b>':''}</div><div>${se.desc}</div><div class="muted">限定菜：${se.items.map(id=>MI[id].n).join('、')}</div></div>`}).join('')}</div>`;
   sheet('🏅 成就與挑戰',h)}
 function drawSeason(){
-  const ss=activeSeasons(g.day).map(s=>s.id);if(!ss.length)return;
-  if(ss.includes('weiya')){const x=OX+T*1.6,y=OY+ROWS*T-15;ctx.fillStyle='#b0241c';rr(x,y,T*4.6,15,3);ctx.fill();ctx.fillStyle='#f2c94c';ctx.font='900 11px "Noto Serif TC",serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('尾牙歡樂季・春酒訂位中',x+T*2.3,y+8)}
-  if(ss.includes('newyear')){const dx=PX(DOOR.x),sy=OY+ROWS*T+WALLPX;for(const s of[-1,1]){const x=dx+s*50;ctx.fillStyle='#5a3a22';rr(x-9,sy+20,18,13,3);ctx.fill();ctx.fillStyle='#e8d9a8';ctx.fillRect(x-9,sy+24,18,2);
+  const ss=activeSeasons(g.day).map(s=>s.id);if(!ss.length)return;const own=id=>g.sdeco&&g.sdeco[id];
+  const sy=OY+ROWS*T+WALLPX,dx0=PX(DOOR.x)-T/2,dy0=OY+ROWS*T;
+  if(ss.includes('weiya')&&own('weiyaBanner')){const x=OX+T*1.6,y=OY+ROWS*T-15;ctx.fillStyle='#b0241c';rr(x,y,T*4.6,15,3);ctx.fill();ctx.fillStyle='#f2c94c';ctx.font='900 11px "Noto Serif TC",serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('尾牙歡樂季・春酒訂位中',x+T*2.3,y+8)}
+  if(ss.includes('weiya')&&own('goldLantern'))for(let i=0;i<4;i++)drawLantern(OX+T*(2.7+i*2.4),OY+ROWS*T+WALLPX/2,.8,'#d4a72c');
+  if(ss.includes('newyear')&&own('kadomatsu')){const dx=PX(DOOR.x);for(const s of[-1,1]){const x=dx+s*50;ctx.fillStyle='#5a3a22';rr(x-9,sy+20,18,13,3);ctx.fill();ctx.fillStyle='#e8d9a8';ctx.fillRect(x-9,sy+24,18,2);
       ctx.fillStyle='#5f9a44';for(const k of[-1,0,1]){rr(x+k*5-2.5,sy-2-(k===0?7:0),5,24+(k===0?7:0),2);ctx.fill()}ctx.fillStyle='#2f6b35';ctx.beginPath();ctx.arc(x,sy+20,9,Math.PI,0);ctx.fill();ctx.fillStyle='#d23a2a';ctx.beginPath();ctx.arc(x+4,sy+15,1.8,0,7);ctx.fill()}}
-  if(ss.includes('sakura')){ctx.strokeStyle='#5a3a2a';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(OX+T*11,3);ctx.quadraticCurveTo(OX+T*12.5,12,OX+T*13.8,6);ctx.stroke();
+  if(ss.includes('newyear')&&own('shimenawa')){ctx.strokeStyle='#c9b27a';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(dx0-8,dy0-2);ctx.quadraticCurveTo(dx0+T/2,dy0+8,dx0+T+8,dy0-2);ctx.stroke();ctx.strokeStyle='#8f7a4a';ctx.lineWidth=1;for(let i=0;i<8;i++){const x=dx0-4+i*7;ctx.beginPath();ctx.moveTo(x,dy0-2+Math.sin(i)*.5);ctx.lineTo(x+3,dy0+4);ctx.stroke()}
+    ctx.fillStyle='#fbf8f0';for(const k of[.2,.5,.8]){const x=dx0+T*k;ctx.beginPath();ctx.moveTo(x-2,dy0+4);ctx.lineTo(x+2,dy0+7);ctx.lineTo(x-2,dy0+10);ctx.lineTo(x+2,dy0+13);ctx.lineTo(x,dy0+15);ctx.lineTo(x-3,dy0+11);ctx.lineTo(x,dy0+8);ctx.closePath();ctx.fill()}}
+  if(ss.includes('sakura')&&own('sakuraBranch')){ctx.strokeStyle='#5a3a2a';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(OX+T*11,3);ctx.quadraticCurveTo(OX+T*12.5,12,OX+T*13.8,6);ctx.stroke();
     for(let i=0;i<10;i++){ctx.fillStyle=i%2?'#f6b6c8':'#fbd3df';ctx.beginPath();ctx.arc(OX+T*11.1+i*11,6+Math.sin(i*1.7)*4,4.2,0,7);ctx.fill()}
     for(let i=0;i<26;i++){const x=(i*97+frameT*(.35+i%3*.12))%CW,y=(i*53+frameT*(.5+i%4*.15))%(OY+ROWS*T);ctx.save();ctx.translate(x,y);ctx.rotate(frameT*.03+i);ctx.fillStyle='rgba(248,180,200,.85)';ctx.beginPath();ctx.ellipse(0,0,3.2,1.8,0,0,7);ctx.fill();ctx.restore()}}
-  if(ss.includes('natsu')){ctx.strokeStyle='#3a2a1c';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(OX,OY+3);for(let i=0;i<=16;i++)ctx.lineTo(OX+i*T,OY+3+(i%2?5:0));ctx.stroke();
-    for(let i=0;i<16;i++){const x=OX+i*T+T/2,y=OY+10;ctx.fillStyle=['#d23a2a','#f4efe2','#e0a800'][i%3];ctx.beginPath();ctx.ellipse(x,y,5,7,0,0,7);ctx.fill();ctx.fillStyle='#222';ctx.fillRect(x-3,y-8,6,2);ctx.fillRect(x-3,y+6,6,2)}
+  if(ss.includes('sakura')&&own('pinkLantern'))for(let i=0;i<5;i++)drawLantern(OX+T*(2.7+i*2.4),OY+ROWS*T+WALLPX/2,.75,'#f08aaa');
+  if(ss.includes('natsu')&&own('natsuLantern')){ctx.strokeStyle='#3a2a1c';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(OX,OY+3);for(let i=0;i<=16;i++)ctx.lineTo(OX+i*T,OY+3+(i%2?5:0));ctx.stroke();
+    for(let i=0;i<16;i++){const x=OX+i*T+T/2,y=OY+10;ctx.fillStyle=['#d23a2a','#f4efe2','#e0a800'][i%3];ctx.beginPath();ctx.ellipse(x,y,5,7,0,0,7);ctx.fill();ctx.fillStyle='#222';ctx.fillRect(x-3,y-8,6,2);ctx.fillRect(x-3,y+6,6,2)}}
+  if(ss.includes('natsu')&&own('furin')){ctx.fillStyle='#c9a46a';ctx.fillRect(dx0+3,dy0-16,T-6,14);ctx.strokeStyle='#9a7a46';ctx.lineWidth=1;for(let i=0;i<7;i++){ctx.beginPath();ctx.moveTo(dx0+3,dy0-14+i*2);ctx.lineTo(dx0+T-3,dy0-14+i*2);ctx.stroke()}
     const fx=PX(DOOR.x)+26,fy=OY+ROWS*T-6+Math.sin(frameT*.1)*1.5;ctx.fillStyle='rgba(170,220,255,.9)';ctx.beginPath();ctx.arc(fx,fy,5,Math.PI,0);ctx.fill();ctx.fillStyle='#f4efe2';ctx.fillRect(fx-1.5,fy,3,9)}
 }
 function viewSettings(){
@@ -2037,6 +2147,7 @@ const ACT={
   rotSel:()=>{const o=g.layout.find(x=>x.uid===ui.sel.uid);const test=g.layout.map(x=>x===o?{...x,rot:x.rot?0:1}:x);const v=validateLayout(test);if(!v.ok){toast(v.msg);return}o.rot=o.rot?0:1;rebuildMap();renderAll()},
   storeSel:()=>{const o=ui.sel;g.layout=g.layout.filter(x=>x.uid!==o.uid);g.storage[o.kind]=(g.storage[o.kind]||0)+1;ui.sel=null;rebuildMap();renderAll()},
   sellSel:()=>{const o=ui.sel;g.layout=g.layout.filter(x=>x.uid!==o.uid);g.cash+=FURN[o.kind].cost*.5;ui.sel=null;rebuildMap();toast(`賣掉了，回收 ${fmt(FURN[o.kind].cost*.5)}`);renderAll()},
+  seasonMusic:()=>{AUD.seasonMusic=AUD.seasonMusic===false;saveAud();if(AC)startMusic();renderView()},
   sfxToggle:()=>{AUD.sfx=!AUD.sfx;saveAud();ac();if(AUD.sfx){lastSfx.door=0;sfx('door')}renderView()},
   voiceToggle:()=>{AUD.voice=!AUD.voice;saveAud();if(AUD.voice){lastSay=0;say()}renderView()},
   voiceTest:()=>{const a=AUD.voice,b=AUD.sfx;AUD.voice=true;AUD.sfx=true;lastSay=0;say();AUD.voice=a;AUD.sfx=b},
@@ -2094,6 +2205,8 @@ document.addEventListener('click',e=>{
   if(d.auto){const e=g.menu[d.auto];e.auto=!e.auto;if(!e.auto)e.qty=Math.max(5,Math.ceil(e.sold*1.2/5)*5);renderView();return}
   if(d.qty){const[id,dl]=d.qty.split(':');const e=g.menu[id];e.qty=clamp(e.qty+ +dl,0,300);renderView();return}
   if(d.stab){ui.shopTab=d.stab;renderView();return}
+  if(d.sdeco){const x=SEASON_DECO.find(y=>y.id===d.sdeco);if(!x||g.sdeco[x.id])return;if(!spend(x.cost))return;g.sdeco[x.id]=true;toast(`買了${x.label}，${SEASON_BY[x.season].label}期間會擺出來`);save();renderView();renderAll();return}
+  if(d.uni){const r=d.uni;const nx=UNIFORMS[r][(g.uni[r]||0)+1];if(!nx||nx.L>g.lantern)return;if(!spend(nx.cost))return;g.uni[r]=(g.uni[r]||0)+1;for(const st of g.staff)if(st.role===r)st.mood=clamp(st.mood+10,0,100);toast(`制服升級成「${nx.label}」，大家都很開心`);save();renderView();renderAll();return}
   if(d.buy){const[kind,k]=d.buy.split(':');
     if(kind==='furn'){if(spend(FURN[k].cost)){g.storage[k]=(g.storage[k]||0)+1;toast(`${FURN[k].label}放進倉庫了，到「🪑 擺設」擺出來`)}}
     if(kind==='wall'){if(spend(WALLDEC[k].cost)){g.wall[k]=(g.wall[k]||0)+1;toast(`掛上了${WALLDEC[k].label}`)}}
@@ -2139,12 +2252,13 @@ document.addEventListener('keydown',e=>{
 
 // ================= 主迴圈 =================
 function renderAll(){if(!g)return;renderTop();renderBanner();renderSide()}
-let lastT=performance.now(),sideAcc=0;
+let lastT=performance.now(),sideAcc=0,musAcc=0;
 const MIN_PER_SEC=1.0;
 function loop(now){
   const dtr=Math.min(.1,(now-lastT)/1000);lastT=now;
   if(g&&busyDay()&&!ui.paused&&!ui.view){let dt=dtr*MIN_PER_SEC*ui.speed;
     while(dt>0&&busyDay()){const st=Math.min(dt,.2);for(let i=0;i<RT.length;i++){if(!RT[i])continue;BG=i!==S.cur;setCtx(i);tick(st)}BG=false;if(S&&RT.length)setCtx(S.cur);dt-=st}}
+  musAcc+=dtr;if(musAcc>1.5){musAcc=0;if(AC&&mus.ever&&wantTrack()!==mus.track)startMusic()}
   if(g){draw();sideAcc+=dtr;if(sideAcc>.35&&busyDay()){sideAcc=0;renderTop();if(ui.tab!=='log'||Math.random()<.5)renderSide()}}
   requestAnimationFrame(loop);
 }
