@@ -171,7 +171,7 @@ label.f input:not([type=range]),label.f select{font:inherit;padding:8px 10px;bor
 
 <script>
 'use strict';
-const APP_VER='2026-10-26d';
+const APP_VER='2026-10-26e';
 // 店主模式：網頁版（github.io）上只有輸入密碼的電腦看得到設定類選單；claude.ai 版一律視為店主
 const ONLINE=/github\.io$/.test(location.hostname);
 const OWNER_HASH='ed77e1a0f2358e25e8d7d31e7e7e33639d0a0468a3f62875b695d5e6438763a1';
@@ -1631,7 +1631,7 @@ function viewTitle(){
   <p style="margin:0;font-size:17px">你是老闆。你不會直接指揮員工，而是決定要請誰、賣什麼、價錢多少、桌子怎麼擺，然後拉開暖簾開店，看看哪裡卡住了再調整。目標是拿到「提燈評鑑」三盞燈。</p>
   <p style="margin:0" class="muted">營業時間預設 17:00 到 24:00。串燒、生魚片、炸物、生啤酒、清酒……客人會一輪一輪追加，飲料賣得好才賺得到錢。</p>
   ${s?`<div class="notice"><b>存檔：</b>「${esc(s.name)}」第 ${s.day} 天・${'🏮'.repeat(s.lantern)||'未獲燈'}・資金 ${fmt(s.cash)}</div>`:''}`,
-  `${s?'<button class="btn primary" data-act="continue">繼續營業</button>':''}<button class="btn ${s?'':'primary'}" data-act="toNew">開新店</button><span class="muted" style="margin-right:auto;align-self:center">版本 ${APP_VER}</span>${isOwner()?'<button class="btn" data-act="toTransfer">📥 匯入舊存檔</button>':''}<button class="btn" data-act="help">遊戲說明</button>`,false)}
+  `${s?'<button class="btn primary" data-act="continue">繼續營業</button>':''}<button class="btn ${s?'':'primary'}" data-act="toNew">開新店</button><span class="muted" style="margin-right:auto;align-self:center">版本 ${APP_VER}</span>${isOwner()?'<button class="btn" data-act="toTransfer">📥 匯入舊存檔</button>':'<button class="btn" data-act="ownerOpen" title="店主登入" aria-label="店主登入">🔑</button>'}<button class="btn" data-act="help">遊戲說明</button>`,false)}
 let newOpt={name:'合',owner:'',loc:'songshan'};
 function viewNew(){
   sheet('開新店',`<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">
@@ -1887,6 +1887,7 @@ const ACT={
   ownerLogin:async()=>{const v=($('#ownerPw')||{}).value||'';let h='';try{h=await sha256(v.trim())}catch(e){}
     if(h===OWNER_HASH){try{localStorage.setItem('izakaya-owner',OWNER_HASH)}catch(e){}ui.ownerMsg='';try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}openView('title');renderAll();toast('🔑 已登入店主模式，這台電腦可以使用所有設定')}
     else{ui.ownerMsg='密碼不對，請再試一次。';renderView()}},
+  ownerOpen:()=>{ui.ownerMsg='';openView('owner')},
   ownerLogout:()=>{try{localStorage.removeItem('izakaya-owner')}catch(e){}closeView();renderAll();toast('🔒 已登出店主模式')},
   close:()=>{if(ui.view==='transfer'&&ui.fromTitle){ui.fromTitle=false;openView('title');return}closeView()},
   toTransfer:()=>{ui.fromTitle=ui.view==='title';ui.expCode='';ui.impMsg='';ui.confirmImport=false;openView('transfer')},
